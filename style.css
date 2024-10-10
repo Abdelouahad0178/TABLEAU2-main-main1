@@ -341,3 +341,24 @@ filter: drop-shadow(0 10px 10px #0009);
 margin-top: 8%;
 filter: drop-shadow(0 10px 10px #0009);
 }
+
+#close-canvas-calculator{
+padding: 3%;
+filter: drop-shadow(0 10px 10px #0009);
+margin-top: 3%;
+border-radius: 5px;
+font-size: 16px;
+color: #470c05;
+border: none;
+}
+
+
+#close-canvas-calculator:hover{
+    padding: 3%;
+    filter: drop-shadow(0 10px 10px #0009);
+    margin-top: 3%;
+    border-radius: 5px;
+    font-size: 15px;
+   
+    color: #E74C3C;
+    }
