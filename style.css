@@ -130,12 +130,14 @@ section {
     background: none;
     border-radius: 4px;
     cursor: pointer;
+    filter: drop-shadow(0 10px 10px #0009);
 }
 
 .buttons .clear-canvas {
     background-color: #E74C3C;
     border: 1px solid #E74C3C;
     transition: all 0.3s ease;
+    filter: drop-shadow(0 10px 10px #0009);
 }
 
 .buttons .clear-canvas:hover {
@@ -145,6 +147,7 @@ section {
 .buttons .save-img {
     background: #4A98F7;
     border: 1px solid #4A98F7;
+    filter: drop-shadow(0 10px 10px #0009);
 }
 
 .save-img:hover {
@@ -174,6 +177,7 @@ section {
     cursor: pointer;
     border-radius: 5px;
     font-size: 1rem;
+    filter: drop-shadow(0 10px 10px #0009);
 }
 
 #add-text-btn:hover, #show-calculator:hover, #delete-object:hover, #add-ruler:hover {
@@ -191,7 +195,7 @@ section {
     background: white;
     padding: 20px;
     border-radius: 10px;
-    box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+    filter: drop-shadow(0 10px 10px #0009);
 }
 
 #canvas-calc-display {
@@ -199,12 +203,14 @@ section {
     padding: 10px;
     font-size: 1.2rem;
     margin-bottom: 10px;
+    filter: drop-shadow(0 10px 10px #0009);
 }
 
 .calculator-buttons {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 10px;
+    filter: drop-shadow(0 10px 10px #0009);
 }
 
 .calc-btn {
@@ -216,6 +222,7 @@ section {
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.3s;
+    filter: drop-shadow(0 10px 10px #0009);
 }
 
 .calc-btn:hover {
@@ -235,6 +242,7 @@ section {
     cursor: pointer;
     z-index: 1000;
     transform: translate(-50%, -50%);
+    filter: drop-shadow(0 10px 10px #0009);
 }
 
 .duplicate-btn:hover {
@@ -273,6 +281,7 @@ section {
     border-radius: 5px;
     cursor: pointer;
     transition: background 0.3s;
+    filter: drop-shadow(0 10px 10px #0009);
 }
 
 #add-table-btn:hover {
@@ -287,6 +296,7 @@ section {
     border-radius: 5px;
     font-size: 1rem;
     transition: background 0.3s;
+    filter: drop-shadow(0 10px 10px #0009);
 }
 
 #annuler-btn:hover, #rétablir-btn:hover {
@@ -323,10 +333,11 @@ section {
 
 font-size: 18px;
 color: blue;
+filter: drop-shadow(0 10px 10px #0009);
 
 }
 #annuler-btn,#rétablir-btn{
 
 margin-top: 8%;
-
+filter: drop-shadow(0 10px 10px #0009);
 }
