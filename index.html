@@ -1,0 +1,165 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Application de Dessin</title>
+    <link rel="stylesheet" href="style.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
+    <script defer src="script.js"></script>
+    
+</head>
+<body>
+    <div class="container">
+        <section class="tools-board">
+            <div class="row">
+                <label class="title">Formes</label>
+                <ul class="options">
+                    <li class="option tool" id="rectangle">
+                        <img src="https://maria1.netlify.app/icons/rectangle.svg" alt="Rectangle" style="width: 20px;">
+                        <span>Rectangle</span>
+                    </li>
+                    <li class="option tool" id="circle">
+                        <img src="https://maria1.netlify.app/icons/circle.svg" alt="Cercle" style="width: 20px;">
+                        <span>Cercle</span>
+                    </li>
+                    <li class="option tool" id="triangle">
+                        <img src="https://maria1.netlify.app/icons/triangle.svg" alt="Triangle" style="width: 20px;">
+                        <span>Triangle</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="row">
+                <label class="title">Remplir la couleur</label>
+                <input type="checkbox" id="fill-color">
+            </div>
+
+            <div class="row">
+                <label class="title">Options</label>
+                <ul class="options">
+                    <li class="option tool" id="brush">
+                        <img src="https://maria1.netlify.app/icons/brush.svg" alt="Pinceau">
+                        <span>Pinceau</span>
+                    </li>
+                    <li class="option tool" id="eraser">
+                        <img src="https://maria1.netlify.app/icons/eraser.svg" alt="Gomme">
+                        <span>Gomme</span>
+                    </li>
+                    <li class="option">
+                        <input type="range" id="size-slider" min="1" max="30" value="5">
+                    </li>
+                </ul>
+            </div>
+
+            <div class="row colors">
+                <label class="title">Couleurs</label>
+                <ul class="options">
+                    <li class="option" style="background-color: #ffffff;"></li>
+                    <li class="option selected" style="background-color: #000000;"></li>
+                    <li class="option" style="background-color: #E02020;"></li>
+                    <li class="option" style="background-color: #6DD400;"></li>
+                    <li class="option">
+                        <input type="color" id="color-picker" value="#4A98F7">
+                    </li>
+                </ul>
+            </div>
+
+            <div class="row">
+                <label class="title">Importer une image</label>
+                <input type="file" id="upload-image" accept="image/*">
+            </div>
+
+            <div class="row">
+                <label class="title">Ajouter du texte</label>
+                <button id="add-text-btn">Ajouter Texte</button>
+            </div>
+
+            <div class="row buttons">
+                <button class="clear-canvas">Effacer le Canevas</button>
+                <button class="save-img">Enregistrer sous forme d'image</button>
+            </div>
+
+            
+            
+
+
+
+            <div class="row buttons">
+                <button id="delete-object">Supprimer l'objet sélectionné</button>
+            </div>
+
+            <div class="row buttons">
+                <button id="show-calculator">Calculatrice</button>
+            </div>
+
+            <div class="row buttons">
+                <button id="add-ruler">Ajouter une règle</button>
+               
+            </div>
+
+<!-- Bouton pour insérer un tableau -->
+<button id="add-table-btn"  >Ajouter un Tableau</button>
+
+<div class="row buttons">
+    <button id="annuler-btn">Annuler</button>
+    <button id="rétablir-btn">Rétablir</button>
+</div>
+
+        </section>
+
+        <section class="drawing-board">
+            <canvas id="canvas"></canvas>
+        </section>
+    </div>
+
+    <!-- Fenêtre calculatrice -->
+    <div id="calculator-canvas" class="calculator" style="display: none;">
+        <h3>Calculatrice</h3>
+        <input type="text" id="canvas-calc-display" disabled>
+        <div class="calculator-buttons">
+            <button class="calc-btn">7</button>
+            <button class="calc-btn">8</button>
+            <button class="calc-btn">9</button>
+            <button class="calc-btn">/</button>
+            <button class="calc-btn">4</button>
+            <button class="calc-btn">5</button>
+            <button class="calc-btn">6</button>
+            <button class="calc-btn">*</button>
+            <button class="calc-btn">1</button>
+            <button class="calc-btn">2</button>
+            <button class="calc-btn">3</button>
+            <button class="calc-btn">-</button>
+            <button class="calc-btn">0</button>
+            <button class="calc-btn">.</button>
+            <button class="calc-btn">=</button>
+            <button class="calc-btn">+</button>
+            <button class="calc-btn" id="canvas-calc-clear">C</button>
+        </div>
+        <button id="close-canvas-calculator">Fermer</button>
+    </div>
+
+    <div id="text-properties-menu" class="text-properties" style="display:none;">
+        <label for="font-family">Police :</label>
+        <select id="font-family">
+            <option value="Arial">Arial</option>
+            <option value="Poppins">Poppins</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Times New Roman">Times New Roman</option>
+        </select>
+    
+        <label for="font-size">Taille :</label>
+        <input type="number" id="font-size" min="8" max="100" value="20">
+    
+        <label for="font-weight">Poids :</label>
+        <select id="font-weight">
+            <option value="normal">Normal</option>
+            <option value="bold">Gras</option>
+        </select>
+    
+        <label for="text-color">Couleur :</label>
+        <input type="color" id="text-color" value="#000000">
+    </div>
+    
+</body>
+</html>
