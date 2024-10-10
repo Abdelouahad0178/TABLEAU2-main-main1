@@ -23,6 +23,7 @@ body {
     padding: 10px;
     max-width: 1440px;
     flex-direction: column;
+    filter: drop-shadow(0 50px 20px #0009);
 }
 
 section {
