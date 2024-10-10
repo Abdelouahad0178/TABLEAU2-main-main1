@@ -636,13 +636,6 @@ canvas.on('selection:cleared', () => {
 
 
 
-
-
-
-
-
-
-
 // Mettre à jour les propriétés du menu en fonction de l'objet sélectionné
 function updateTextPropertiesMenu(text) {
     fontFamilySelect.value = text.fontFamily || 'Arial';
