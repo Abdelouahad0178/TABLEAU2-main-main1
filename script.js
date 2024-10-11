@@ -1,3 +1,7 @@
+// =============================
+// 1. Initialisation du Canevas
+// =============================
+
 // Initialiser le canevas Fabric.js
 const canvas = new fabric.Canvas('canvas', {
     isDrawingMode: false,
@@ -7,18 +11,20 @@ const canvas = new fabric.Canvas('canvas', {
 });
 
 // Variables pour convertir les pixels en centimètres
-const pixelsPerCm = 37.7952755906; // Conversion de pixels à centimètres
+const pixelsPerCm = 37.7952755906;
 
-
+// Référence au menu des propriétés de texte
 const textPropertiesMenu = document.getElementById('text-properties-menu');
 
+// Variable pour stocker le nom du fichier JSON chargé
+let nomFichierJSON = null;
 
-
+// =============================
+// 2. Gestion des Formes et Mesures
+// =============================
 
 // Fonction pour ajouter une règle comme forme
 function addRulerShape() {
-    
-
     const ruler = new fabric.Line([100, 100, 400, 100], {
         stroke: 'black',
         strokeWidth: 3,
@@ -51,18 +57,13 @@ function addRulerShape() {
         canvas.remove(rulerText);
     });
 
-
-   
+    // Associer le texte de mesure à la règle
+    ruler.rulerText = rulerText;
 }
 
 // Fonction pour mettre à jour la longueur de la règle et repositionner le texte
 function updateRulerShapeLength(ruler, rulerText) {
-    const start = ruler.calcLineCoords();
-    const lengthInPixels = Math.sqrt(
-        Math.pow(start.x2 - start.x1, 2) + Math.pow(start.y2 - start.y1, 2)
-    );
-
-    const lengthInCm = lengthInPixels / pixelsPerCm;
+    const lengthInCm = ruler.getScaledWidth() / pixelsPerCm;
     if (lengthInCm >= 100) {
         const lengthInMeters = (lengthInCm / 100).toFixed(2);
         rulerText.set({ text: `${lengthInMeters} m` });
@@ -71,11 +72,9 @@ function updateRulerShapeLength(ruler, rulerText) {
     }
 
     // Positionner le texte au milieu de la règle
-    const newLeft = (start.x1 + start.x2) / 2;
-    const newTop = (start.y1 + start.y2) / 2 - 10;
     rulerText.set({
-        left: newLeft,
-        top: newTop,
+        left: ruler.left,
+        top: ruler.top - 20,
         originX: 'center',
         originY: 'center',
         angle: ruler.angle
@@ -100,11 +99,24 @@ function addShapeMeasurements(shape) {
 
     // Associer le texte de mesure à la forme
     shape.measurementText = measurementText;
+    shape.measurementTextActive = true; // Indicateur pour savoir si le texte de mesure est actif
 
     // Mettre à jour les mesures lors de la modification de la forme
-    shape.on('modified', () => updateShapeMeasurements(shape, measurementText));
-    shape.on('scaling', () => updateShapeMeasurements(shape, measurementText));
-    shape.on('moving', () => updateShapeMeasurements(shape, measurementText));
+    shape.on('modified', () => {
+        if (shape.measurementTextActive) {
+            updateShapeMeasurements(shape, measurementText);
+        }
+    });
+    shape.on('scaling', () => {
+        if (shape.measurementTextActive) {
+            updateShapeMeasurements(shape, measurementText);
+        }
+    });
+    shape.on('moving', () => {
+        if (shape.measurementTextActive) {
+            updateShapeMeasurements(shape, measurementText);
+        }
+    });
 
     // Supprimer le texte de mesure lorsque la forme est supprimée
     shape.on('removed', () => {
@@ -138,152 +150,15 @@ function updateShapeMeasurements(shape, measurementText) {
     canvas.renderAll();
 }
 
-// Ajout des événements pour les boutons de formes
-document.getElementById('rectangle').addEventListener('click', () => {
-    
-    const rect = new fabric.Rect({
-        width: 100,
-        height: 100,
-        left: 150,
-        top: 100,
-        fill: 'transparent',
-        stroke: 'black',
-        strokeWidth: 2
-    });
-    canvas.add(rect);
-    addShapeMeasurements(rect);
-});
-
-document.getElementById('circle').addEventListener('click', () => {
-    const circle = new fabric.Circle({
-        radius: 50,
-        left: 150,
-        top: 100,
-        fill: 'transparent',
-        stroke: 'black',
-        strokeWidth: 2
-    });
-    canvas.add(circle);
-    addShapeMeasurements(circle);
-});
-
-document.getElementById('triangle').addEventListener('click', () => {
-    const triangle = new fabric.Triangle({
-        width: 100,
-        height: 100,
-        left: 150,
-        top: 100,
-        fill: 'transparent',
-        stroke: 'black',
-        strokeWidth: 2
-    });
-    canvas.add(triangle);
-    addShapeMeasurements(triangle);
-});
-
-// Ajouter la règle comme forme sur le canevas
-document.getElementById('add-ruler').addEventListener('click', addRulerShape);
-
-// Effacer le canevas
-const clearCanvas = document.querySelector(".clear-canvas");
-clearCanvas.addEventListener("click", () => {
-    canvas.clear();
-    canvas.backgroundColor = 'white';
-    canvas.renderAll();
-});
-
-// Fonction pour ajouter du texte
-const addTextBtn = document.querySelector("#add-text-btn");
-addTextBtn.addEventListener('click', () => {
-    const text = new fabric.IText('Entrez votre texte', {
-        left: 150,
-        top: 100,
-        fontSize: 20,
-        fontFamily: 'Arial',
-        fill: '#000000',
-        editable: true,
-        selectable: true
-    });
-    canvas.add(text);
-    canvas.setActiveObject(text);
-    canvas.renderAll();
-});
-
-// Supprimer l'objet sélectionné
-const deleteObjectBtn = document.querySelector("#delete-object");
-deleteObjectBtn.addEventListener("click", () => {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-        canvas.remove(activeObject);
-        canvas.renderAll();
-    } else {
-        alert("Aucun objet sélectionné !");
-    }
-});
-
-// Créer un bouton de duplication dynamiquement
-const duplicateBtn = document.createElement('button');
-duplicateBtn.innerHTML = '+';
-duplicateBtn.classList.add('duplicate-btn');
-document.body.appendChild(duplicateBtn);
-duplicateBtn.style.display = 'none'; // Masquer le bouton de duplication par défaut
-
-// Fonction pour dupliquer un objet
-duplicateBtn.addEventListener('click', () => {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-        activeObject.clone(function(clonedObj) {
-            clonedObj.set({
-                left: activeObject.left + 30,
-                top: activeObject.top + 30,
-                evented: true
-            });
-            canvas.add(clonedObj);
-            canvas.setActiveObject(clonedObj);
-            if (clonedObj.type !== 'line') {
-                addShapeMeasurements(clonedObj);
-            } else {
-                addRulerShape(clonedObj);
-            }
-            canvas.renderAll();
-        });
-    }
-    hideDuplicateButton();
-});
-
-// Afficher le bouton "+" quand un objet est sélectionné
-function showDuplicateButton() {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-        duplicateBtn.style.display = 'block';
-    }
-}
-
-// Masquer le bouton "+"
-function hideDuplicateButton() {
-    duplicateBtn.style.display = 'none';
-}
-
-canvas.on('selection:created', showDuplicateButton);
-canvas.on('selection:updated', showDuplicateButton);
-canvas.on('selection:cleared', hideDuplicateButton);
-
-// Suppression via la touche "Delete"
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'Delete') {
-        const activeObject = canvas.getActiveObject();
-        if (activeObject) {
-            canvas.remove(activeObject);
-            canvas.renderAll();
-        }
-    }
-});
+// =============================
+// 3. Outils de Dessin (Pinceau, Gomme)
+// =============================
 
 // Activer le pinceau
 document.getElementById('brush').addEventListener('click', () => {
     canvas.isDrawingMode = true;
     canvas.selection = false;
-    canvas.freeDrawingBrush.color = document.querySelector(".colors .selected").style.backgroundColor || "#000000";
+    canvas.freeDrawingBrush.color = getSelectedColor();
 });
 
 // Activer la gomme
@@ -293,244 +168,112 @@ document.getElementById('eraser').addEventListener('click', () => {
 });
 
 // Désactiver le pinceau après avoir dessiné
-canvas.on('mouse:up', function() {
+canvas.on('mouse:up', () => {
     canvas.isDrawingMode = false;
     canvas.selection = true;
 });
 
 // Ajuster la taille du pinceau/gomme
-const sizeSlider = document.querySelector("#size-slider");
-sizeSlider.addEventListener('change', () => {
-    canvas.freeDrawingBrush.width = parseInt(sizeSlider.value);
+document.querySelector("#size-slider").addEventListener('change', (e) => {
+    const size = parseInt(e.target.value, 10);
+    canvas.freeDrawingBrush.width = size;
 });
 
-// Sauvegarder le dessin en tant qu'image
-const saveImg = document.querySelector(".save-img");
-saveImg.addEventListener("click", () => {
-    const dataURL = canvas.toDataURL({
-        format: 'png',
-        multiplier: 2
-    });
-    const link = document.createElement("a");
-    link.href = dataURL;
-    link.download = `canvas_${Date.now()}.png`;
-    link.click();
-});
+// =============================
+// 4. Gestion des Couleurs
+// =============================
 
-// Importer une image sur le canevas
-const uploadImageInput = document.querySelector("#upload-image");
-uploadImageInput.addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        fabric.Image.fromURL(event.target.result, (img) => {
-            img.set({
-                left: 150,
-                top: 100,
-                scaleX: 0.5,
-                scaleY: 0.5,
-                selectable: true,
-                hasBorders: true,
-                hasControls: true
-            });
-
-            canvas.add(img);
-            canvas.renderAll();
-        });
-    };
-    reader.readAsDataURL(file);
-});
+// Fonction pour obtenir la couleur sélectionnée
+function getSelectedColor() {
+    const selectedColorBtn = document.querySelector(".colors .selected");
+    if (selectedColorBtn) {
+        return window.getComputedStyle(selectedColorBtn).getPropertyValue("background-color");
+    }
+    return "#000000"; // Valeur par défaut
+}
 
 // Gestion des couleurs pour le pinceau
-const colorBtns = document.querySelectorAll(".colors .option");
-colorBtns.forEach(btn => {
+document.querySelectorAll(".colors .option").forEach(btn => {
     btn.addEventListener('click', () => {
         document.querySelector(".colors .selected").classList.remove("selected");
         btn.classList.add("selected");
-        const selectedColor = window.getComputedStyle(btn).getPropertyValue("background-color");
-        canvas.freeDrawingBrush.color = selectedColor;
+        canvas.freeDrawingBrush.color = getSelectedColor();
     });
 });
 
 // Sélecteur de couleur personnalisé
-const colorPicker = document.querySelector("#color-picker");
-colorPicker.addEventListener("change", () => {
-    canvas.freeDrawingBrush.color = colorPicker.value;
+document.querySelector("#color-picker").addEventListener("change", (e) => {
+    canvas.freeDrawingBrush.color = e.target.value;
     document.querySelector(".colors .selected").classList.remove("selected");
-    colorPicker.parentElement.classList.add("selected");
+    e.target.parentElement.classList.add("selected");
 });
 
-const calculatorCanvas = document.querySelector("#calculator-canvas");
-const showCalculatorBtn = document.querySelector("#show-calculator");
-const canvasCalcDisplay = document.querySelector("#canvas-calc-display");
-const canvasCalcButtons = document.querySelectorAll("#calculator-canvas .calc-btn");
-const closeCanvasCalculatorBtn = document.querySelector("#close-canvas-calculator");
+// Sélecteur de couleur pour les formes
+const shapeColorPicker = document.getElementById('shape-color-picker');
 
+// =============================
+// 5. Manipulation des Objets (Ajouter, Supprimer, Dupliquer)
+// =============================
 
-// Variables pour le glisser-déposer
-let isDragging = false;
-let offsetX, offsetY;
-
-// Rendre la calculatrice déplaçable
-const calculatorHeader = calculatorCanvas.querySelector('h3');
-calculatorHeader.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    offsetX = e.clientX - calculatorCanvas.offsetLeft;
-    offsetY = e.clientY - calculatorCanvas.offsetTop;
-    calculatorHeader.style.cursor = 'move';
-});
-
-document.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-        calculatorCanvas.style.left = `${e.clientX - offsetX}px`;
-        calculatorCanvas.style.top = `${e.clientY - offsetY}px`;
-    }
-});
-
-document.addEventListener('mouseup', () => {
-    isDragging = false;
-    calculatorHeader.style.cursor = 'default';
-});
-
-// Afficher et masquer la calculatrice
-showCalculatorBtn.addEventListener("click", () => {
-    calculatorCanvas.style.display = 'block';
-    calculatorCanvas.style.zIndex = 9999;
-});
-
-closeCanvasCalculatorBtn.addEventListener("click", () => {
-    calculatorCanvas.style.display = 'none';
-});
-
-// Gestion des boutons de la calculatrice
-canvasCalcButtons.forEach(button => {
-    button.addEventListener("click", () => {
-        const value = button.textContent;
-        if (value === "C") {
-            canvasCalcDisplay.value = "";
-        } else if (value === "=") {
-            try {
-                canvasCalcDisplay.value = eval(canvasCalcDisplay.value);
-            } catch {
-                canvasCalcDisplay.value = "Erreur";
-            }
-        } else {
-            canvasCalcDisplay.value += value;
-        }
-    });
-});
-
-// Affichage du bouton "+" lorsqu'un objet est sélectionné
-canvas.on('selection:created', () => {
-    duplicateBtn.style.display = 'block';
-});
-
-canvas.on('selection:cleared', () => {
-    duplicateBtn.style.display = 'none';
-});
-
-// Sauvegarder le canevas en tant qu'image
-const saveImgBtn = document.querySelector(".save-img");
-saveImgBtn.addEventListener("click", () => {
-    const dataURL = canvas.toDataURL({
-        format: 'png',
-        multiplier: 2
-    });
-    const link = document.createElement("a");
-    link.href = dataURL;
-    link.download = `canvas_${Date.now()}.png`;
-    link.click();
-});
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-// Fonction pour ajouter une règle comme forme
-function addRulerShape() {
-    const ruler = new fabric.Rect({
-        width: 300,
-        height: 5,
+// Ajouter des formes avec couleur sélectionnée
+document.getElementById('rectangle').addEventListener('click', () => {
+    const color = shapeColorPicker.value;
+    const rect = new fabric.Rect({
+        width: 100,
+        height: 100,
         left: 150,
         top: 100,
         fill: 'transparent',
-        stroke: 'black',
-        strokeWidth: 2,
-        selectable: true,
-        hasBorders: true,
-        hasControls: true,
-        originX: 'center',
-        originY: 'center'
+        stroke: color,
+        strokeWidth: 2
     });
+    canvas.add(rect);
+    addShapeMeasurements(rect);
+});
 
-    const rulerText = new fabric.Text('0 dm', {
-        fontSize: 14,
-        fill: 'black',
-        left: ruler.left,
-        top: ruler.top - 20,
-        selectable: false,
-        originX: 'center',
-        originY: 'center'
+document.getElementById('circle').addEventListener('click', () => {
+    const color = shapeColorPicker.value;
+    const circle = new fabric.Circle({
+        radius: 50,
+        left: 150,
+        top: 100,
+        fill: 'transparent',
+        stroke: color,
+        strokeWidth: 2
     });
+    canvas.add(circle);
+    addShapeMeasurements(circle);
+});
 
-    canvas.add(ruler);
-    canvas.add(rulerText);
-    updateRulerShapeLength(ruler, rulerText);
-
-    // Mettre à jour la longueur lors de la modification
-    ruler.on('modified', () => updateRulerShapeLength(ruler, rulerText));
-    ruler.on('moving', () => updateRulerShapeLength(ruler, rulerText));
-    ruler.on('scaling', () => updateRulerShapeLength(ruler, rulerText));
-
-    // Supprimer le texte de mesure lorsque la règle est supprimée
-    ruler.on('removed', () => {
-        canvas.remove(rulerText);
+document.getElementById('triangle').addEventListener('click', () => {
+    const color = shapeColorPicker.value;
+    const triangle = new fabric.Triangle({
+        width: 100,
+        height: 100,
+        left: 150,
+        top: 100,
+        fill: 'transparent',
+        stroke: color,
+        strokeWidth: 2
     });
-}
-
-// Fonction pour mettre à jour la longueur de la règle et repositionner le texte
-function updateRulerShapeLength(ruler, rulerText) {
-    const lengthInCm = ruler.getScaledWidth() / pixelsPerCm;
-    if (lengthInCm >= 100) {
-        const lengthInMeters = (lengthInCm / 100).toFixed(2);
-        rulerText.set({ text: `${lengthInMeters} m` });
-    } else {
-        rulerText.set({ text: `${lengthInCm.toFixed(2)} dm` });
-    }
-
-    // Positionner le texte au milieu de la règle
-    rulerText.set({
-        left: ruler.left,
-        top: ruler.top - 20,
-        originX: 'center',
-        originY: 'center',
-        angle: ruler.angle
-    });
-
-    // Mettre à jour le canevas
-    canvas.bringToFront(rulerText);
-    canvas.renderAll();
-}
+    canvas.add(triangle);
+    addShapeMeasurements(triangle);
+});
 
 // Ajouter la règle comme forme sur le canevas
 document.getElementById('add-ruler').addEventListener('click', addRulerShape);
 
+// Ajouter un tableau sur le canevas
+document.getElementById('add-table-btn').addEventListener('click', () => {
+    const rows = parseInt(prompt("Nombre de lignes ?", "3"), 10);
+    const cols = parseInt(prompt("Nombre de colonnes ?", "3"), 10);
+
+    if (!isNaN(rows) && !isNaN(cols) && rows > 0 && cols > 0) {
+        addTable(rows, cols);
+    } else {
+        alert("Veuillez entrer des valeurs valides pour les lignes et les colonnes.");
+    }
+});
 
 // Fonction pour ajouter un tableau sur le canevas
 function addTable(rows = 3, cols = 3) {
@@ -584,101 +327,131 @@ function addTable(rows = 3, cols = 3) {
     canvas.renderAll();
 }
 
-// Écouteur d'événement pour le bouton d'ajout de tableau
-document.getElementById('add-table-btn').addEventListener('click', () => {
-    // Demander le nombre de lignes et de colonnes
-    const rows = parseInt(prompt("Nombre de lignes ?", "3"), 10);
-    const cols = parseInt(prompt("Nombre de colonnes ?", "3"), 10);
-
-    if (!isNaN(rows) && !isNaN(cols) && rows > 0 && cols > 0) {
-        addTable(rows, cols);
+// Supprimer l'objet sélectionné
+document.getElementById('delete-object').addEventListener("click", () => {
+    const activeObject = canvas.getActiveObject();
+    if (activeObject) {
+        canvas.remove(activeObject);
+        canvas.renderAll();
     } else {
-        alert("Veuillez entrer des valeurs valides pour les lignes et les colonnes.");
+        alert("Aucun objet sélectionné !");
     }
 });
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-let historique = [];
-let pileRétablir = [];
-
-// Fonction pour enregistrer l'état actuel du canevas
-function enregistrerÉtat() {
-    historique.push(JSON.stringify(canvas));
-    pileRétablir = []; // Vider la pile de rétablissement après une nouvelle action
-}
-
-// Fonction pour annuler
-function annuler() {
-    if (historique.length > 0) {
-        const dernierÉtat = historique.pop();
-        pileRétablir.push(JSON.stringify(canvas));
-        canvas.loadFromJSON(dernierÉtat, canvas.renderAll.bind(canvas));
+// Fonction pour supprimer le texte de mesure associé à l'objet sélectionné
+function supprimerTexteDeMesure() {
+    const activeObject = canvas.getActiveObject();
+    if (activeObject) {
+        const associatedText = activeObject.measurementText || activeObject.rulerText;
+        if (associatedText) {
+            canvas.remove(associatedText);
+            if (activeObject.measurementText) {
+                activeObject.measurementTextActive = false; // Désactiver l'indicateur pour empêcher la recréation du texte
+                delete activeObject.measurementText; // Supprimer la référence au texte de mesure
+            }
+            if (activeObject.rulerText) {
+                delete activeObject.rulerText; // Supprimer la référence au texte de la règle
+            }
+            canvas.renderAll();
+        } else {
+            alert("Aucun texte de mesure associé à cet objet !");
+        }
+    } else {
+        alert("Aucun objet sélectionné !");
     }
 }
 
-// Fonction pour rétablir
-function rétablir() {
-    if (pileRétablir.length > 0) {
-        const prochainÉtat = pileRétablir.pop();
-        historique.push(JSON.stringify(canvas));
-        canvas.loadFromJSON(prochainÉtat, canvas.renderAll.bind(canvas));
+// Ajouter un événement pour le bouton "Supprimer le texte de mesure"
+document.getElementById('delete-measurement-text').addEventListener("click", supprimerTexteDeMesure);
+
+// Créer un bouton de duplication dynamiquement
+const duplicateBtn = document.createElement('button');
+duplicateBtn.innerHTML = '+';
+duplicateBtn.classList.add('duplicate-btn');
+document.body.appendChild(duplicateBtn);
+duplicateBtn.style.display = 'none'; // Masquer le bouton de duplication par défaut
+
+// Fonction pour dupliquer un objet
+duplicateBtn.addEventListener('click', () => {
+    const activeObject = canvas.getActiveObject();
+    if (activeObject) {
+        activeObject.clone(function(clonedObj) {
+            clonedObj.set({
+                left: activeObject.left + 30,
+                top: activeObject.top + 30,
+                evented: true
+            });
+            canvas.add(clonedObj);
+            canvas.setActiveObject(clonedObj);
+            if (clonedObj.type !== 'line') {
+                addShapeMeasurements(clonedObj);
+            } else {
+                addRulerShape(clonedObj);
+            }
+            canvas.renderAll();
+        });
+    }
+    hideDuplicateButton();
+});
+
+// Afficher le bouton "+" quand un objet est sélectionné
+function showDuplicateButton() {
+    const activeObject = canvas.getActiveObject();
+    if (activeObject) {
+        duplicateBtn.style.display = 'block';
     }
 }
 
+// Masquer le bouton "+"
+function hideDuplicateButton() {
+    duplicateBtn.style.display = 'none';
+}
 
+canvas.on('selection:created', showDuplicateButton);
+canvas.on('selection:updated', showDuplicateButton);
+canvas.on('selection:cleared', hideDuplicateButton);
 
-// Enregistrer l'état à chaque ajout ou suppression d'objet
-canvas.on('object:added', enregistrerÉtat);
-canvas.on('object:removed', enregistrerÉtat);
+// =============================
+// 6. Gestion du Texte
+// =============================
 
-// Ajouter les événements pour les boutons "Annuler" et "Rétablir"
-document.getElementById('annuler-btn').addEventListener('click', annuler);
-document.getElementById('rétablir-btn').addEventListener('click', rétablir);
-
-
-
+// Fonction pour ajouter du texte
+document.getElementById('add-text-btn').addEventListener('click', () => {
+    const text = new fabric.IText('Entrez votre texte', {
+        left: 150,
+        top: 100,
+        fontSize: 20,
+        fontFamily: 'Arial',
+        fill: '#000000',
+        editable: true,
+        selectable: true
+    });
+    canvas.add(text);
+    canvas.setActiveObject(text);
+    canvas.renderAll();
+});
 
 // Références aux éléments du menu de propriétés
-
 const fontFamilySelect = document.getElementById('font-family');
 const fontSizeInput = document.getElementById('font-size');
 const fontWeightSelect = document.getElementById('font-weight');
 const textColorInput = document.getElementById('text-color');
 
-
 // Afficher le menu des propriétés de texte lorsque du texte est sélectionné, sinon le masquer
 canvas.on('selection:created', (e) => {
-    if (e.selected && e.selected[0] && e.selected[0].type === 'i-text') {
-        // Si l'objet sélectionné est du texte interactif ('i-text')
+    const selected = e.selected[0];
+    if (selected && selected.type === 'i-text') {
         textPropertiesMenu.style.display = 'flex'; // Afficher le menu des propriétés de texte
-       updateTextPropertiesMenu(e.selected[0]); // Mettre à jour les propriétés du menu en fonction du texte sélectionné
+        updateTextPropertiesMenu(selected); // Mettre à jour les propriétés du menu en fonction du texte sélectionné
     } else {
-        // Si l'objet sélectionné n'est pas du texte interactif
         textPropertiesMenu.style.display = 'none'; // Masquer le menu des propriétés de texte
     }
 });
 
 // Masquer le menu des propriétés lorsque la sélection est effacée
 canvas.on('selection:cleared', () => {
-    textPropertiesMenu.style.display = 'none'; // Masquer le menu des propriétés de texte lorsque rien n'est sélectionné
+    textPropertiesMenu.style.display = 'none'; // Masquer le menu des propriétés de texte
 });
-
-
-
-
 
 // Mettre à jour les propriétés du menu en fonction de l'objet sélectionné
 function updateTextPropertiesMenu(text) {
@@ -721,52 +494,20 @@ textColorInput.addEventListener('input', () => {
     }
 });
 
+// =============================
+// 7. Fonctionnalités Supplémentaires (Calculatrice, Tableau)
+// =============================
 
+// Variables pour la calculatrice
+const calculatorCanvas = document.getElementById("calculator-canvas");
+const showCalculatorBtn = document.getElementById("show-calculator");
+const canvasCalcDisplay = document.getElementById("canvas-calc-display");
+const canvasCalcButtons = document.querySelectorAll("#calculator-canvas .calc-btn");
+const closeCanvasCalculatorBtn = document.getElementById("close-canvas-calculator");
 
-
-calculatorHeader.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    offsetX = e.clientX - calculatorHeader.offsetLeft;
-    offsetY = e.clientY - calculatorHeader.offsetTop;
-    calculatorHeader.style.cursor = 'move'; // Changer le curseur pendant le glissement
-});
-
-document.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-        calculatorHeader.style.left = `${e.clientX - offsetX}px`;
-        calculatorHeader.style.top = `${e.clientY - offsetY}px`;
-    }
-});
-
-document.addEventListener('mouseup', () => {
-    isDragging = false;
-    calculatorHeader.style.cursor = 'default'; // Restaurer le curseur par défaut
-});
-// Rendre la calculatrice déplaçable
-
-
-// Événement pour commencer le glissement
-calculatorHeader.addEventListener('mousedown', (e) => {
-    isDragging = true;
-    offsetX = e.clientX - calculatorCanvas.offsetLeft;
-    offsetY = e.clientY - calculatorCanvas.offsetTop;
-    calculatorCanvas.style.cursor = 'move'; // Changer le curseur pendant le glissement
-});
-
-// Événement pour déplacer l'élément
-document.addEventListener('mousemove', (e) => {
-    if (isDragging) {
-        calculatorCanvas.style.left = `${e.clientX - offsetX}px`;
-        calculatorCanvas.style.top = `${e.clientY - offsetY}px`;
-    }
-});
-
-// Événement pour arrêter le glissement
-document.addEventListener('mouseup', () => {
-    isDragging = false;
-    calculatorCanvas.style.cursor = 'default'; // Restaurer le curseur par défaut
-});
-// Variables pour le glisser-déposer
+// Variables pour le glisser-déposer de la calculatrice
+let isDragging = false;
+let offsetX, offsetY;
 
 // Fonction pour obtenir les coordonnées du pointeur (souris ou tactile)
 function getPointerPosition(e) {
@@ -779,12 +520,7 @@ function getPointerPosition(e) {
     }
 }
 
-// Rendre la calculatrice déplaçable
-
-calculatorHeader.addEventListener('mousedown', startDrag);
-calculatorHeader.addEventListener('touchstart', startDrag);
-
-// Événement pour commencer le glissement
+// Fonction pour commencer le glissement
 function startDrag(e) {
     isDragging = true;
     const pointer = getPointerPosition(e);
@@ -794,10 +530,7 @@ function startDrag(e) {
     e.preventDefault(); // Empêcher le comportement par défaut (comme le défilement)
 }
 
-// Événement pour déplacer l'élément
-document.addEventListener('mousemove', drag);
-document.addEventListener('touchmove', drag);
-
+// Fonction pour déplacer la calculatrice
 function drag(e) {
     if (isDragging) {
         const pointer = getPointerPosition(e);
@@ -806,147 +539,98 @@ function drag(e) {
     }
 }
 
-// Événement pour arrêter le glissement
-document.addEventListener('mouseup', stopDrag);
-document.addEventListener('touchend', stopDrag);
-
+// Fonction pour arrêter le glissement
 function stopDrag() {
     isDragging = false;
     calculatorCanvas.style.cursor = 'default'; // Restaurer le curseur par défaut
 }
 
-// Récupérer le sélecteur de couleur des formes
-const shapeColorPicker = document.getElementById('shape-color-picker');
+// Ajouter les écouteurs d'événements pour le glisser-déposer (souris et tactile)
+const calculatorHeader = calculatorCanvas.querySelector('h3');
+calculatorHeader.addEventListener('mousedown', startDrag);
+calculatorHeader.addEventListener('touchstart', startDrag);
 
-// Ajout des événements pour les boutons de formes
-document.getElementById('rectangle').addEventListener('click', () => {
-    const color = shapeColorPicker.value; // Utiliser la couleur sélectionnée
-    const rect = new fabric.Rect({
-        width: 100,
-        height: 100,
-        left: 150,
-        top: 100,
-        fill: 'transparent',
-        stroke: color, // Appliquer la couleur sélectionnée
-        strokeWidth: 2
-    });
-    canvas.add(rect);
-    addShapeMeasurements(rect);
+document.addEventListener('mousemove', drag);
+document.addEventListener('touchmove', drag);
+document.addEventListener('mouseup', stopDrag);
+document.addEventListener('touchend', stopDrag);
+
+// Afficher et masquer la calculatrice
+showCalculatorBtn.addEventListener("click", () => {
+    calculatorCanvas.style.display = 'block';
+    calculatorCanvas.style.zIndex = 9999;
 });
 
-document.getElementById('circle').addEventListener('click', () => {
-    const color = shapeColorPicker.value; // Utiliser la couleur sélectionnée
-    const circle = new fabric.Circle({
-        radius: 50,
-        left: 150,
-        top: 100,
-        fill: 'transparent',
-        stroke: color, // Appliquer la couleur sélectionnée
-        strokeWidth: 2
-    });
-    canvas.add(circle);
-    addShapeMeasurements(circle);
+closeCanvasCalculatorBtn.addEventListener("click", () => {
+    calculatorCanvas.style.display = 'none';
 });
 
-document.getElementById('triangle').addEventListener('click', () => {
-    const color = shapeColorPicker.value; // Utiliser la couleur sélectionnée
-    const triangle = new fabric.Triangle({
-        width: 100,
-        height: 100,
-        left: 150,
-        top: 100,
-        fill: 'transparent',
-        stroke: color, // Appliquer la couleur sélectionnée
-        strokeWidth: 2
-    });
-    canvas.add(triangle);
-    addShapeMeasurements(triangle);
-});
-
-// Fonction pour supprimer le texte de mesure associé à l'objet sélectionné
-function supprimerTexteDeMesure() {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-        // Vérifier si l'objet a un texte de mesure associé
-        const associatedText = activeObject.measurementText || activeObject.rulerText;
-        if (associatedText) {
-            canvas.remove(associatedText);
-            delete activeObject.measurementText; // Supprimer la référence au texte de mesure
-            delete activeObject.rulerText; // Supprimer la référence au texte de la règle
-            canvas.renderAll();
+// Gestion des boutons de la calculatrice
+canvasCalcButtons.forEach(button => {
+    button.addEventListener("click", () => {
+        const value = button.textContent;
+        if (value === "C") {
+            canvasCalcDisplay.value = "";
+        } else if (value === "=") {
+            try {
+                canvasCalcDisplay.value = eval(canvasCalcDisplay.value);
+            } catch {
+                canvasCalcDisplay.value = "Erreur";
+            }
         } else {
-            alert("Aucun texte de mesure associé à cet objet !");
+            canvasCalcDisplay.value += value;
         }
-    } else {
-        alert("Aucun objet sélectionné !");
+    });
+});
+
+// =============================
+// 8. Historique (Annuler, Rétablir)
+// =============================
+
+let historique = [];
+let pileRétablir = [];
+
+// Fonction pour enregistrer l'état actuel du canevas
+function enregistrerÉtat() {
+    historique.push(JSON.stringify(canvas));
+    pileRétablir = []; // Vider la pile de rétablissement après une nouvelle action
+}
+
+// Fonction pour annuler
+function annuler() {
+    if (historique.length > 0) {
+        const dernierÉtat = historique.pop();
+        pileRétablir.push(JSON.stringify(canvas));
+        canvas.loadFromJSON(dernierÉtat, () => {
+            canvas.renderAll();
+            alert("Action annulée !");
+        });
     }
 }
 
-// Ajouter un événement pour le bouton "Supprimer le texte de mesure"
-const deleteMeasurementTextBtn = document.querySelector("#delete-measurement-text");
-deleteMeasurementTextBtn.addEventListener("click", supprimerTexteDeMesure);
-
-
-
-// Fonction pour ajouter les mesures d'une forme
-function addShapeMeasurements(shape) {
-    const measurementText = new fabric.Text('', {
-        fontSize: 14,
-        fill: 'black',
-        selectable: false,
-        originX: 'center',
-        originY: 'center'
-    });
-    canvas.add(measurementText);
-    updateShapeMeasurements(shape, measurementText);
-
-    // Associer le texte de mesure à la forme
-    shape.measurementText = measurementText;
-    shape.measurementTextActive = true; // Indicateur pour savoir si le texte de mesure est actif
-
-    // Mettre à jour les mesures lors de la modification de la forme
-    shape.on('modified', () => {
-        if (shape.measurementTextActive) {
-            updateShapeMeasurements(shape, measurementText);
-        }
-    });
-    shape.on('scaling', () => {
-        if (shape.measurementTextActive) {
-            updateShapeMeasurements(shape, measurementText);
-        }
-    });
-    shape.on('moving', () => {
-        if (shape.measurementTextActive) {
-            updateShapeMeasurements(shape, measurementText);
-        }
-    });
-
-    // Supprimer le texte de mesure lorsque la forme est supprimée
-    shape.on('removed', () => {
-        canvas.remove(measurementText);
-    });
-}
-// Fonction pour supprimer le texte de mesure associé à l'objet sélectionné
-function supprimerTexteDeMesure() {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-        // Vérifier si l'objet a un texte de mesure associé
-        const associatedText = activeObject.measurementText || activeObject.rulerText;
-        if (associatedText) {
-            canvas.remove(associatedText);
-            activeObject.measurementTextActive = false; // Désactiver l'indicateur pour empêcher la recréation du texte
-            delete activeObject.measurementText; // Supprimer la référence au texte de mesure
-            delete activeObject.rulerText; // Supprimer la référence au texte de la règle
+// Fonction pour rétablir
+function rétablir() {
+    if (pileRétablir.length > 0) {
+        const prochainÉtat = pileRétablir.pop();
+        historique.push(JSON.stringify(canvas));
+        canvas.loadFromJSON(prochainÉtat, () => {
             canvas.renderAll();
-        } else {
-            alert("Aucun texte de mesure associé à cet objet !");
-        }
-    } else {
-        alert("Aucun objet sélectionné !");
+            alert("Action rétablie !");
+        });
     }
 }
 
+// Enregistrer l'état à chaque ajout ou suppression d'objet
+canvas.on('object:added', enregistrerÉtat);
+canvas.on('object:removed', enregistrerÉtat);
 
+// Ajouter les événements pour les boutons "Annuler" et "Rétablir"
+document.getElementById('annuler-btn').addEventListener('click', annuler);
+document.getElementById('rétablir-btn').addEventListener('click', rétablir);
+
+// =============================
+// 9. Enregistrement et Chargement JSON
+// =============================
 
 // Fonction pour enregistrer le canevas sous forme de JSON
 function enregistrerCanevasJSON() {
@@ -954,36 +638,14 @@ function enregistrerCanevasJSON() {
     const blob = new Blob([canvasJSON], { type: 'application/json' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `canvas_${Date.now()}.json`;
+    link.download = nomFichierJSON ? nomFichierJSON : `canvas_${Date.now()}.json`; // Utiliser le nom du fichier chargé ou générer un nouveau nom
     link.click();
+
+    alert(nomFichierJSON ? `Modifications enregistrées dans ${nomFichierJSON}` : "Nouveau fichier JSON créé !");
 }
 
 // Ajouter un événement pour le bouton "Enregistrer sous forme de JSON"
-const saveJsonBtn = document.querySelector("#save-json");
-saveJsonBtn.addEventListener("click", enregistrerCanevasJSON);
-
-// Fonction pour charger un fichier JSON et restaurer l'état du canevas
-function chargerCanevasJSON(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const json = e.target.result;
-        canvas.loadFromJSON(json, () => {
-            canvas.renderAll();
-            alert("Le canevas a été chargé avec succès !");
-        });
-    };
-    reader.readAsText(file);
-}
-
-// Ajouter un événement pour le chargement du fichier JSON
-const loadJsonInput = document.querySelector("#load-json");
-loadJsonInput.addEventListener("change", chargerCanevasJSON);
-
-
-let nomFichierJSON = null;
+document.getElementById("save-json").addEventListener("click", enregistrerCanevasJSON);
 
 // Fonction pour charger un fichier JSON et restaurer l'état du canevas
 function chargerCanevasJSON(event) {
@@ -1002,7 +664,150 @@ function chargerCanevasJSON(event) {
     };
     reader.readAsText(file);
 }
-// Fonction pour enregistrer le canevas sous forme de JSON
+
+// Ajouter un événement pour le chargement du fichier JSON
+document.getElementById("load-json").addEventListener("change", chargerCanevasJSON);
+
+// =============================
+// 10. Fonctionnalités de Sauvegarde et Importation d'Images
+// =============================
+
+// Sauvegarder le dessin en tant qu'image
+document.querySelector(".save-img").addEventListener("click", () => {
+    const dataURL = canvas.toDataURL({
+        format: 'png',
+        multiplier: 2
+    });
+    const link = document.createElement("a");
+    link.href = dataURL;
+    link.download = `canvas_${Date.now()}.png`;
+    link.click();
+});
+
+// Importer une image sur le canevas
+document.getElementById("upload-image").addEventListener("change", (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+        fabric.Image.fromURL(event.target.result, (img) => {
+            img.set({
+                left: 150,
+                top: 100,
+                scaleX: 0.5,
+                scaleY: 0.5,
+                selectable: true,
+                hasBorders: true,
+                hasControls: true
+            });
+
+            canvas.add(img);
+            canvas.renderAll();
+        });
+    };
+    reader.readAsDataURL(file);
+});
+
+// =============================
+// 11. Suppression via la touche "Delete"
+// =============================
+
+// Fonction pour supprimer un objet sélectionné
+function supprimerObjet() {
+    const activeObject = canvas.getActiveObject();
+    if (activeObject) {
+        // Supprimer le texte de mesure associé si présent
+        const associatedText = activeObject.measurementText || activeObject.rulerText;
+        if (associatedText) {
+            canvas.remove(associatedText);
+        }
+        canvas.remove(activeObject);
+        canvas.renderAll();
+    }
+}
+
+// Suppression via la touche "Delete"
+document.addEventListener('keydown', (event) => {
+    if (event.key === 'Delete') {
+        supprimerObjet();
+    }
+});
+
+// =============================
+// 12. Calculatrice Déplaçable (Support Tactile)
+// =============================
+
+// Variables pour le glisser-déposer de la calculatrice
+let isCalculatorDragging = false;
+let calculatorOffsetX, calculatorOffsetY;
+
+// Fonction pour commencer le glissement de la calculatrice
+function startCalculatorDrag(e) {
+    isCalculatorDragging = true;
+    const pointer = getPointerPosition(e);
+    calculatorOffsetX = pointer.x - calculatorCanvas.offsetLeft;
+    calculatorOffsetY = pointer.y - calculatorCanvas.offsetTop;
+    calculatorCanvas.style.cursor = 'move';
+    e.preventDefault();
+}
+
+// Fonction pour déplacer la calculatrice
+function dragCalculator(e) {
+    if (isCalculatorDragging) {
+        const pointer = getPointerPosition(e);
+        calculatorCanvas.style.left = `${pointer.x - calculatorOffsetX}px`;
+        calculatorCanvas.style.top = `${pointer.y - calculatorOffsetY}px`;
+    }
+}
+
+// Fonction pour arrêter le glissement de la calculatrice
+function stopCalculatorDrag() {
+    isCalculatorDragging = false;
+    calculatorCanvas.style.cursor = 'default';
+}
+
+// Ajouter les écouteurs d'événements pour le glisser-déposer de la calculatrice (souris et tactile)
+calculatorHeader.addEventListener('mousedown', startCalculatorDrag);
+calculatorHeader.addEventListener('touchstart', startCalculatorDrag);
+
+document.addEventListener('mousemove', dragCalculator);
+document.addEventListener('touchmove', dragCalculator);
+document.addEventListener('mouseup', stopCalculatorDrag);
+document.addEventListener('touchend', stopCalculatorDrag);
+
+// =============================
+// 13. Suppression du Texte de Mesure sans Supprimer l'Objet
+// =============================
+
+// Fonction pour supprimer uniquement le texte de mesure associé à l'objet sélectionné
+function supprimerTexteDeMesure() {
+    const activeObject = canvas.getActiveObject();
+    if (activeObject) {
+        const associatedText = activeObject.measurementText || activeObject.rulerText;
+        if (associatedText) {
+            canvas.remove(associatedText);
+            if (activeObject.measurementText) {
+                activeObject.measurementTextActive = false; // Désactiver l'indicateur pour empêcher la recréation du texte
+                delete activeObject.measurementText; // Supprimer la référence au texte de mesure
+            }
+            if (activeObject.rulerText) {
+                delete activeObject.rulerText; // Supprimer la référence au texte de la règle
+            }
+            canvas.renderAll();
+        } else {
+            alert("Aucun texte de mesure associé à cet objet !");
+        }
+    } else {
+        alert("Aucun objet sélectionné !");
+    }
+}
+
+// =============================
+// 14. Sauvegarde et Chargement JSON avec Mise à Jour
+// =============================
+
+// Fonction pour enregistrer le canevas sous forme de JSON avec mise à jour du même fichier
 function enregistrerCanevasJSON() {
     const canvasJSON = JSON.stringify(canvas.toJSON());
     const blob = new Blob([canvasJSON], { type: 'application/json' });
@@ -1014,3 +819,35 @@ function enregistrerCanevasJSON() {
 
     alert(nomFichierJSON ? `Modifications enregistrées dans ${nomFichierJSON}` : "Nouveau fichier JSON créé !");
 }
+
+// Fonction pour charger un fichier JSON et restaurer l'état du canevas
+function chargerCanevasJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    nomFichierJSON = file.name; // Enregistrer le nom du fichier JSON chargé
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const json = e.target.result;
+        canvas.loadFromJSON(json, () => {
+            canvas.renderAll();
+            alert("Le canevas a été chargé avec succès !");
+        });
+    };
+    reader.readAsText(file);
+}
+
+// =============================
+// 15. Initialisation des Événements
+// =============================
+
+// Événements pour les boutons "Annuler" et "Rétablir" sont déjà ajoutés dans la section Historique
+
+// Événements pour les boutons "Enregistrer" et "Charger" sont déjà ajoutés dans la section Enregistrement JSON
+
+// Événements pour les outils de dessin et de manipulation sont déjà ajoutés dans les sections respectives
+
+// =============================
+// Fin du Code Organisé
+// =============================
