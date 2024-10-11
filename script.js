@@ -945,3 +945,72 @@ function supprimerTexteDeMesure() {
         alert("Aucun objet sélectionné !");
     }
 }
+
+
+
+// Fonction pour enregistrer le canevas sous forme de JSON
+function enregistrerCanevasJSON() {
+    const canvasJSON = JSON.stringify(canvas.toJSON());
+    const blob = new Blob([canvasJSON], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = `canvas_${Date.now()}.json`;
+    link.click();
+}
+
+// Ajouter un événement pour le bouton "Enregistrer sous forme de JSON"
+const saveJsonBtn = document.querySelector("#save-json");
+saveJsonBtn.addEventListener("click", enregistrerCanevasJSON);
+
+// Fonction pour charger un fichier JSON et restaurer l'état du canevas
+function chargerCanevasJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const json = e.target.result;
+        canvas.loadFromJSON(json, () => {
+            canvas.renderAll();
+            alert("Le canevas a été chargé avec succès !");
+        });
+    };
+    reader.readAsText(file);
+}
+
+// Ajouter un événement pour le chargement du fichier JSON
+const loadJsonInput = document.querySelector("#load-json");
+loadJsonInput.addEventListener("change", chargerCanevasJSON);
+
+
+let nomFichierJSON = null;
+
+// Fonction pour charger un fichier JSON et restaurer l'état du canevas
+function chargerCanevasJSON(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    nomFichierJSON = file.name; // Enregistrer le nom du fichier JSON chargé
+
+    const reader = new FileReader();
+    reader.onload = (e) => {
+        const json = e.target.result;
+        canvas.loadFromJSON(json, () => {
+            canvas.renderAll();
+            alert("Le canevas a été chargé avec succès !");
+        });
+    };
+    reader.readAsText(file);
+}
+// Fonction pour enregistrer le canevas sous forme de JSON
+function enregistrerCanevasJSON() {
+    const canvasJSON = JSON.stringify(canvas.toJSON());
+    const blob = new Blob([canvasJSON], { type: 'application/json' });
+
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = nomFichierJSON ? nomFichierJSON : `canvas_${Date.now()}.json`; // Utiliser le nom du fichier chargé ou générer un nouveau nom
+    link.click();
+
+    alert(nomFichierJSON ? `Modifications enregistrées dans ${nomFichierJSON}` : "Nouveau fichier JSON créé !");
+}

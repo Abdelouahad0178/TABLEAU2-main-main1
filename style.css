@@ -169,7 +169,7 @@ section {
     border-radius: 5px;
 }
 
-#add-text-btn, #show-calculator, #delete-object, #add-ruler,#delete-measurement-text {
+#add-text-btn, #show-calculator, #delete-object, #add-ruler,#delete-measurement-text ,#save-json,.load-json-btn{
     padding: 10px;
     background-color: #4A98F7;
     color: white;
@@ -180,7 +180,7 @@ section {
     filter: drop-shadow(0 10px 10px #0009);
 }
 
-#add-text-btn:hover, #show-calculator:hover, #delete-object:hover, #add-ruler:hover {
+#add-text-btn:hover, #show-calculator:hover, #delete-object:hover, #add-ruler:hover,#delete-measurement-text:hover,#save-json:hover,.load-json-btn:hover {
     background-color: #6C757D;
     color: white;
 }
