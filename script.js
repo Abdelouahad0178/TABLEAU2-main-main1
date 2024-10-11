@@ -766,3 +766,51 @@ document.addEventListener('mouseup', () => {
     isDragging = false;
     calculatorCanvas.style.cursor = 'default'; // Restaurer le curseur par défaut
 });
+// Variables pour le glisser-déposer
+
+// Fonction pour obtenir les coordonnées du pointeur (souris ou tactile)
+function getPointerPosition(e) {
+    if (e.touches) {
+        // Pour les écrans tactiles
+        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+    } else {
+        // Pour les appareils non tactiles
+        return { x: e.clientX, y: e.clientY };
+    }
+}
+
+// Rendre la calculatrice déplaçable
+
+calculatorHeader.addEventListener('mousedown', startDrag);
+calculatorHeader.addEventListener('touchstart', startDrag);
+
+// Événement pour commencer le glissement
+function startDrag(e) {
+    isDragging = true;
+    const pointer = getPointerPosition(e);
+    offsetX = pointer.x - calculatorCanvas.offsetLeft;
+    offsetY = pointer.y - calculatorCanvas.offsetTop;
+    calculatorCanvas.style.cursor = 'move'; // Changer le curseur pendant le glissement
+    e.preventDefault(); // Empêcher le comportement par défaut (comme le défilement)
+}
+
+// Événement pour déplacer l'élément
+document.addEventListener('mousemove', drag);
+document.addEventListener('touchmove', drag);
+
+function drag(e) {
+    if (isDragging) {
+        const pointer = getPointerPosition(e);
+        calculatorCanvas.style.left = `${pointer.x - offsetX}px`;
+        calculatorCanvas.style.top = `${pointer.y - offsetY}px`;
+    }
+}
+
+// Événement pour arrêter le glissement
+document.addEventListener('mouseup', stopDrag);
+document.addEventListener('touchend', stopDrag);
+
+function stopDrag() {
+    isDragging = false;
+    calculatorCanvas.style.cursor = 'default'; // Restaurer le curseur par défaut
+}
