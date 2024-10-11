@@ -287,6 +287,7 @@ section {
 #add-table-btn:hover {
     background: #6C757D;
 }
+
 #annuler-btn, #rétablir-btn {
     padding: 10px;
     background-color: #E74C3C;
@@ -329,36 +330,68 @@ section {
     border-radius: 3px;
     border: 1px solid #ccc;
 }
-.title{
 
-font-size: 18px;
-color: blue;
-
-
-}
-#annuler-btn,#rétablir-btn{
-
-margin-top: 8%;
-filter: drop-shadow(0 10px 10px #0009);
+.title {
+    font-size: 18px;
+    color: blue;
 }
 
-#close-canvas-calculator{
-padding: 3%;
-filter: drop-shadow(0 10px 10px #0009);
-margin-top: 3%;
-border-radius: 5px;
-font-size: 16px;
-color: #470c05;
-border: none;
+#close-canvas-calculator {
+    padding: 3%;
+    filter: drop-shadow(0 10px 10px #0009);
+    margin-top: 3%;
+    border-radius: 5px;
+    font-size: 16px;
+    color: #470c05;
+    border: none;
+    cursor: pointer;
 }
 
-
-#close-canvas-calculator:hover{
+#close-canvas-calculator:hover {
     padding: 3%;
     filter: drop-shadow(0 10px 10px #0009);
     margin-top: 3%;
     border-radius: 5px;
     font-size: 15px;
-   
     color: #E74C3C;
-    }
+}
+
+.tab-container {
+    display: flex;
+    margin-bottom: 10px;
+}
+
+.tab-button {
+    padding: 10px 20px;
+    background: #4A98F7;
+    color: #fff;
+    border: none;
+    cursor: pointer;
+    border-radius: 5px 5px 0 0;
+    margin-right: 5px;
+}
+
+.tab-button.active {
+    background: #6C757D;
+}
+
+.canvas-page {
+    display: none;
+    width: 100%;
+    height: 100%;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+}
+
+#calculator-canvas {
+    position: absolute; /* Doit être en absolute pour permettre le déplacement */
+    z-index: 9999;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    background: white;
+    padding: 20px;
+    border-radius: 10px;
+    filter: drop-shadow(0 10px 10px #0009);
+    cursor: move; /* Curseur indicatif pour montrer que l'élément peut être déplacé */
+}

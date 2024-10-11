@@ -362,19 +362,44 @@ colorPicker.addEventListener("change", () => {
     colorPicker.parentElement.classList.add("selected");
 });
 
-// Afficher la calculatrice
-const showCalculatorBtn = document.querySelector("#show-calculator");
 const calculatorCanvas = document.querySelector("#calculator-canvas");
+const showCalculatorBtn = document.querySelector("#show-calculator");
 const canvasCalcDisplay = document.querySelector("#canvas-calc-display");
 const canvasCalcButtons = document.querySelectorAll("#calculator-canvas .calc-btn");
 const closeCanvasCalculatorBtn = document.querySelector("#close-canvas-calculator");
 
+
+// Variables pour le glisser-déposer
+let isDragging = false;
+let offsetX, offsetY;
+
+// Rendre la calculatrice déplaçable
+const calculatorHeader = calculatorCanvas.querySelector('h3');
+calculatorHeader.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    offsetX = e.clientX - calculatorCanvas.offsetLeft;
+    offsetY = e.clientY - calculatorCanvas.offsetTop;
+    calculatorHeader.style.cursor = 'move';
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        calculatorCanvas.style.left = `${e.clientX - offsetX}px`;
+        calculatorCanvas.style.top = `${e.clientY - offsetY}px`;
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    isDragging = false;
+    calculatorHeader.style.cursor = 'default';
+});
+
+// Afficher et masquer la calculatrice
 showCalculatorBtn.addEventListener("click", () => {
     calculatorCanvas.style.display = 'block';
     calculatorCanvas.style.zIndex = 9999;
 });
 
-// Fermer la calculatrice
 closeCanvasCalculatorBtn.addEventListener("click", () => {
     calculatorCanvas.style.display = 'none';
 });
@@ -418,6 +443,25 @@ saveImgBtn.addEventListener("click", () => {
     link.download = `canvas_${Date.now()}.png`;
     link.click();
 });
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 // Fonction pour ajouter une règle comme forme
 function addRulerShape() {
     const ruler = new fabric.Rect({
@@ -620,7 +664,7 @@ canvas.on('selection:created', (e) => {
     if (e.selected && e.selected[0] && e.selected[0].type === 'i-text') {
         // Si l'objet sélectionné est du texte interactif ('i-text')
         textPropertiesMenu.style.display = 'flex'; // Afficher le menu des propriétés de texte
-        updateTextPropertiesMenu(e.selected[0]); // Mettre à jour les propriétés du menu en fonction du texte sélectionné
+       updateTextPropertiesMenu(e.selected[0]); // Mettre à jour les propriétés du menu en fonction du texte sélectionné
     } else {
         // Si l'objet sélectionné n'est pas du texte interactif
         textPropertiesMenu.style.display = 'none'; // Masquer le menu des propriétés de texte
@@ -678,3 +722,47 @@ textColorInput.addEventListener('input', () => {
 });
 
 
+
+
+calculatorHeader.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    offsetX = e.clientX - calculatorHeader.offsetLeft;
+    offsetY = e.clientY - calculatorHeader.offsetTop;
+    calculatorHeader.style.cursor = 'move'; // Changer le curseur pendant le glissement
+});
+
+document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        calculatorHeader.style.left = `${e.clientX - offsetX}px`;
+        calculatorHeader.style.top = `${e.clientY - offsetY}px`;
+    }
+});
+
+document.addEventListener('mouseup', () => {
+    isDragging = false;
+    calculatorHeader.style.cursor = 'default'; // Restaurer le curseur par défaut
+});
+// Rendre la calculatrice déplaçable
+
+
+// Événement pour commencer le glissement
+calculatorHeader.addEventListener('mousedown', (e) => {
+    isDragging = true;
+    offsetX = e.clientX - calculatorCanvas.offsetLeft;
+    offsetY = e.clientY - calculatorCanvas.offsetTop;
+    calculatorCanvas.style.cursor = 'move'; // Changer le curseur pendant le glissement
+});
+
+// Événement pour déplacer l'élément
+document.addEventListener('mousemove', (e) => {
+    if (isDragging) {
+        calculatorCanvas.style.left = `${e.clientX - offsetX}px`;
+        calculatorCanvas.style.top = `${e.clientY - offsetY}px`;
+    }
+});
+
+// Événement pour arrêter le glissement
+document.addEventListener('mouseup', () => {
+    isDragging = false;
+    calculatorCanvas.style.cursor = 'default'; // Restaurer le curseur par défaut
+});
