@@ -814,3 +814,134 @@ function stopDrag() {
     isDragging = false;
     calculatorCanvas.style.cursor = 'default'; // Restaurer le curseur par défaut
 }
+
+// Récupérer le sélecteur de couleur des formes
+const shapeColorPicker = document.getElementById('shape-color-picker');
+
+// Ajout des événements pour les boutons de formes
+document.getElementById('rectangle').addEventListener('click', () => {
+    const color = shapeColorPicker.value; // Utiliser la couleur sélectionnée
+    const rect = new fabric.Rect({
+        width: 100,
+        height: 100,
+        left: 150,
+        top: 100,
+        fill: 'transparent',
+        stroke: color, // Appliquer la couleur sélectionnée
+        strokeWidth: 2
+    });
+    canvas.add(rect);
+    addShapeMeasurements(rect);
+});
+
+document.getElementById('circle').addEventListener('click', () => {
+    const color = shapeColorPicker.value; // Utiliser la couleur sélectionnée
+    const circle = new fabric.Circle({
+        radius: 50,
+        left: 150,
+        top: 100,
+        fill: 'transparent',
+        stroke: color, // Appliquer la couleur sélectionnée
+        strokeWidth: 2
+    });
+    canvas.add(circle);
+    addShapeMeasurements(circle);
+});
+
+document.getElementById('triangle').addEventListener('click', () => {
+    const color = shapeColorPicker.value; // Utiliser la couleur sélectionnée
+    const triangle = new fabric.Triangle({
+        width: 100,
+        height: 100,
+        left: 150,
+        top: 100,
+        fill: 'transparent',
+        stroke: color, // Appliquer la couleur sélectionnée
+        strokeWidth: 2
+    });
+    canvas.add(triangle);
+    addShapeMeasurements(triangle);
+});
+
+// Fonction pour supprimer le texte de mesure associé à l'objet sélectionné
+function supprimerTexteDeMesure() {
+    const activeObject = canvas.getActiveObject();
+    if (activeObject) {
+        // Vérifier si l'objet a un texte de mesure associé
+        const associatedText = activeObject.measurementText || activeObject.rulerText;
+        if (associatedText) {
+            canvas.remove(associatedText);
+            delete activeObject.measurementText; // Supprimer la référence au texte de mesure
+            delete activeObject.rulerText; // Supprimer la référence au texte de la règle
+            canvas.renderAll();
+        } else {
+            alert("Aucun texte de mesure associé à cet objet !");
+        }
+    } else {
+        alert("Aucun objet sélectionné !");
+    }
+}
+
+// Ajouter un événement pour le bouton "Supprimer le texte de mesure"
+const deleteMeasurementTextBtn = document.querySelector("#delete-measurement-text");
+deleteMeasurementTextBtn.addEventListener("click", supprimerTexteDeMesure);
+
+
+
+// Fonction pour ajouter les mesures d'une forme
+function addShapeMeasurements(shape) {
+    const measurementText = new fabric.Text('', {
+        fontSize: 14,
+        fill: 'black',
+        selectable: false,
+        originX: 'center',
+        originY: 'center'
+    });
+    canvas.add(measurementText);
+    updateShapeMeasurements(shape, measurementText);
+
+    // Associer le texte de mesure à la forme
+    shape.measurementText = measurementText;
+    shape.measurementTextActive = true; // Indicateur pour savoir si le texte de mesure est actif
+
+    // Mettre à jour les mesures lors de la modification de la forme
+    shape.on('modified', () => {
+        if (shape.measurementTextActive) {
+            updateShapeMeasurements(shape, measurementText);
+        }
+    });
+    shape.on('scaling', () => {
+        if (shape.measurementTextActive) {
+            updateShapeMeasurements(shape, measurementText);
+        }
+    });
+    shape.on('moving', () => {
+        if (shape.measurementTextActive) {
+            updateShapeMeasurements(shape, measurementText);
+        }
+    });
+
+    // Supprimer le texte de mesure lorsque la forme est supprimée
+    shape.on('removed', () => {
+        canvas.remove(measurementText);
+    });
+}
+// Fonction pour supprimer le texte de mesure associé à l'objet sélectionné
+function supprimerTexteDeMesure() {
+    const activeObject = canvas.getActiveObject();
+    if (activeObject) {
+        // Vérifier si l'objet a un texte de mesure associé
+        const associatedText = activeObject.measurementText || activeObject.rulerText;
+        if (associatedText) {
+            canvas.remove(associatedText);
+            activeObject.measurementTextActive = false; // Désactiver l'indicateur pour empêcher la recréation du texte
+            delete activeObject.measurementText; // Supprimer la référence au texte de mesure
+            delete activeObject.rulerText; // Supprimer la référence au texte de la règle
+            canvas.renderAll();
+        } else {
+            alert("Aucun texte de mesure associé à cet objet !");
+        }
+    } else {
+        alert("Aucun objet sélectionné !");
+    }
+}

@@ -169,7 +169,7 @@ section {
     border-radius: 5px;
 }
 
-#add-text-btn, #show-calculator, #delete-object, #add-ruler {
+#add-text-btn, #show-calculator, #delete-object, #add-ruler,#delete-measurement-text {
     padding: 10px;
     background-color: #4A98F7;
     color: white;
