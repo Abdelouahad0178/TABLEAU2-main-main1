@@ -3,11 +3,18 @@
 // =============================
 
 // Initialiser le canevas Fabric.js
+
+
+
+
+
+
+
 const canvas = new fabric.Canvas('canvas', {
     isDrawingMode: false,
     backgroundColor: 'white',
     width: 1130,
-    height: 1220
+    height:1440
 });
 
 // Variables pour convertir les pixels en centimètres
@@ -18,6 +25,11 @@ const textPropertiesMenu = document.getElementById('text-properties-menu');
 
 // Variable pour stocker le nom du fichier JSON chargé
 let nomFichierJSON = null;
+
+
+
+
+
 
 // =============================
 // 2. Gestion des Formes et Mesures
@@ -851,3 +863,9 @@ function chargerCanevasJSON(event) {
 // =============================
 // Fin du Code Organisé
 // =============================
+
+
+// =============================
+// Gestion des Pages de Travail (Similaire à Excel)
+// =============================
+

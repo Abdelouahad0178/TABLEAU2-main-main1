@@ -5,13 +5,16 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Application de Dessin</title>
     <link rel="stylesheet" href="style.css">
+    <!-- Bibliothèques externes -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/5.3.0/fabric.min.js"></script>
-    <script defer src="script.js"></script>
     
+    <!-- Votre script principal -->
+    <script defer src="script.js"></script>
 </head>
 <body>
     <div class="container">
         <section class="tools-board">
+            <!-- Outils de dessin -->
             <div class="row">
                 <label class="title">Formes :</label>
                 <ul class="options">
@@ -30,22 +33,19 @@
                 </ul>
             </div>
 
-
-
-
+            <!-- Sélecteur de couleur pour les formes -->
             <div class="row">
                 <label class="title">Couleur de la forme :</label>
                 <input type="color" id="shape-color-picker" value="#000000">
             </div>
-            
 
-
-            
+            <!-- Remplissage de couleur (actuellement masqué) -->
             <div class="row" style="display: none;">
-                <label >Remplir la couleur</label>
+                <label>Remplir la couleur</label>
                 <input type="checkbox" id="fill-color">
             </div>
 
+            <!-- Outils de pinceau et gomme -->
             <div class="row">
                 <label class="title">Options :</label>
                 <ul class="options">
@@ -63,6 +63,7 @@
                 </ul>
             </div>
 
+            <!-- Palette de couleurs -->
             <div class="row colors">
                 <label class="title">Couleurs :</label>
                 <ul class="options">
@@ -76,44 +77,37 @@
                 </ul>
             </div>
 
-
-            <label class="title">Outils :</label>
+            <!-- Importer une image -->
             <div class="row">
-                
                 <label class="title">Importer une image</label>
                 <input type="file" id="upload-image" accept="image/*">
             </div>
 
+            <!-- Ajouter du texte -->
             <div class="row">
                 <label class="title">Ajouter du texte</label>
                 <button id="add-text-btn">Ajouter Texte</button>
             </div>
 
+            <!-- Boutons d'action -->
             <div class="row buttons">
                 <button class="clear-canvas">Effacer le Canevas</button>
                 <button class="save-img">Enregistrer sous forme d'image</button>
             </div>
 
-            
             <div class="row buttons">
                 <button id="save-json">Enregistrer sous forme de JSON</button>
                 <input type="file" id="load-json" accept=".json" style="display: none;">
                 <label for="load-json" class="load-json-btn">Charger le fichier JSON</label>
             </div>
-            
-
-
 
             <div class="row buttons">
                 <button id="delete-object">Supprimer l'objet sélectionné</button>
             </div>
 
-
             <div class="row buttons">
                 <button id="delete-measurement-text">Supprimer le texte de mesure</button>
             </div>
-            
-
 
             <div class="row buttons">
                 <button id="show-calculator">Calculatrice</button>
@@ -121,17 +115,15 @@
 
             <div class="row buttons">
                 <button id="add-ruler">Ajouter une règle</button>
-               
             </div>
 
-<!-- Bouton pour insérer un tableau -->
-<button id="add-table-btn"  >Ajouter un Tableau</button>
+            <!-- Bouton pour insérer un tableau -->
+            <button id="add-table-btn">Ajouter un Tableau</button>
 
-<div class="row buttons">
-    <button id="annuler-btn">Annuler</button>
-    <button id="rétablir-btn">Rétablir</button>
-</div>
-
+            <div class="row buttons">
+                <button id="annuler-btn">Annuler</button>
+                <button id="rétablir-btn">Rétablir</button>
+            </div>
         </section>
 
         <section class="drawing-board">
@@ -165,6 +157,7 @@
         <button id="close-canvas-calculator">Fermer</button>
     </div>
 
+    <!-- Menu des propriétés de texte -->
     <div id="text-properties-menu" class="text-properties" style="display:none;">
         <label for="font-family">Police :</label>
         <select id="font-family">
@@ -173,19 +166,18 @@
             <option value="Courier New">Courier New</option>
             <option value="Times New Roman">Times New Roman</option>
         </select>
-    
+
         <label for="font-size">Taille :</label>
         <input type="number" id="font-size" min="8" max="100" value="20">
-    
+
         <label for="font-weight">Poids :</label>
         <select id="font-weight">
             <option value="normal">Normal</option>
             <option value="bold">Gras</option>
         </select>
-    
+
         <label for="text-color">Couleur :</label>
         <input type="color" id="text-color" value="#000000">
     </div>
-    
 </body>
 </html>

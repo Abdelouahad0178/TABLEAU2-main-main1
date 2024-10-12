@@ -169,7 +169,7 @@ section {
     border-radius: 5px;
 }
 
-#add-text-btn, #show-calculator, #delete-object, #add-ruler,#delete-measurement-text ,#save-json,.load-json-btn{
+#add-text-btn, #show-calculator, #delete-object, #add-ruler, #delete-measurement-text, #save-json, .load-json-btn ,#add-table-btn,#rétablir-btn,#annuler-btn{
     padding: 10px;
     background-color: #4A98F7;
     color: white;
@@ -180,7 +180,7 @@ section {
     filter: drop-shadow(0 10px 10px #0009);
 }
 
-#add-text-btn:hover, #show-calculator:hover, #delete-object:hover, #add-ruler:hover,#delete-measurement-text:hover,#save-json:hover,.load-json-btn:hover {
+#add-text-btn:hover, #show-calculator:hover, #delete-object:hover, #add-ruler:hover, #delete-measurement-text:hover, #save-json:hover, .load-json-btn:hover,#add-table-btn:hover ,#rétablir-btn:hover,#annuler-btn:hover{
     background-color: #6C757D;
     color: white;
 }
@@ -196,12 +196,13 @@ section {
     padding: 20px;
     border-radius: 10px;
     filter: drop-shadow(0 10px 10px #0009);
+    cursor: move;
 }
 
 #canvas-calc-display {
     width: 100%;
     padding: 10px;
-    font-size: 1.2rem;
+    font-size: 1.3rem;
     margin-bottom: 10px;
     filter: drop-shadow(0 10px 10px #0009);
 }
@@ -209,7 +210,7 @@ section {
 .calculator-buttons {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    gap: 10px;
+    gap: 15px;
     filter: drop-shadow(0 10px 10px #0009);
 }
 
@@ -241,7 +242,7 @@ section {
     border-radius: 50%;
     cursor: pointer;
     z-index: 1000;
-    transform: translate(-50%, -50%);
+    transform: translate(-50%, -100%);
     filter: drop-shadow(0 10px 10px #0009);
 }
 
@@ -250,61 +251,7 @@ section {
 }
 
 /* Styles pour la barre d'outils flottante */
-#text-toolbar {
-    position: absolute;
-    display: none;
-    padding: 10px;
-    background-color: #fff;
-    border: 1px solid #ccc;
-    border-radius: 5px;
-    box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-    z-index: 1000;
-}
-
-/* Media queries for larger screens */
-@media (min-width: 768px) {
-    .container {
-        flex-direction: row;
-    }
-
-    .tools-board {
-        width: 250px;
-    }
-}
-
-#add-table-btn {
-    padding: 15px;
-    font-size: 1rem;
-    background: #4A98F7;
-    color: white;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    transition: background 0.3s;
-    filter: drop-shadow(0 10px 10px #0009);
-}
-
-#add-table-btn:hover {
-    background: #6C757D;
-}
-
-#annuler-btn, #rétablir-btn {
-    padding: 10px;
-    background-color: #E74C3C;
-    color: white;
-    border: none;
-    cursor: pointer;
-    border-radius: 5px;
-    font-size: 1rem;
-    transition: background 0.3s;
-    filter: drop-shadow(0 10px 10px #0009);
-}
-
-#annuler-btn:hover, #rétablir-btn:hover {
-    background-color: #C0392B;
-}
-
-.text-properties {
+#text-properties-menu {
     position: absolute;
     bottom: 10px;
     left: 50%;
@@ -383,18 +330,376 @@ section {
     border-radius: 5px;
 }
 
-#calculator-canvas {
-    position: absolute; /* Doit être en absolute pour permettre le déplacement */
-    z-index: 9999;
-    left: 50%;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    background: white;
-    padding: 20px;
-    border-radius: 10px;
-    filter: drop-shadow(0 10px 10px #0009);
-    cursor: move; /* Curseur indicatif pour montrer que l'élément peut être déplacé */
+/* Media Queries pour différentes résolutions */
+
+/* 1. Pour les écrans de 1440px et plus */
+@media (min-width: 1440px) {
+    .container {
+        flex-direction: row;
+    }
+
+    .tools-board {
+        width: 300px;
+    }
+
+    .drawing-board {
+        flex: 1;
+    }
 }
 
+/* 2. Pour les écrans entre 1024px et 1439px */
+@media (min-width: 1024px) and (max-width: 1439px) {
+    .container {
+        flex-direction: row;
+    }
 
+    .tools-board {
+        width: 250px;
+    }
 
+    .drawing-board {
+        flex: 1;
+    }
+}
+
+/* 3. Pour les écrans entre 992px et 1023px */
+@media (min-width: 992px) and (max-width: 1023px) {
+    .container {
+        flex-direction: row;
+    }
+
+    .tools-board {
+        width: 220px;
+    }
+
+    .drawing-board {
+        flex: 1;
+    }
+
+    .title {
+        font-size: 16px;
+    }
+
+    .buttons button,
+    #add-text-btn, 
+    #show-calculator, 
+    #delete-object, 
+    #add-ruler, 
+    #delete-measurement-text, 
+    #save-json, 
+    .load-json-btn {
+        font-size: 0.9rem;
+        padding: 8px;
+    }
+
+    .calc-btn {
+        padding: 18px;
+        font-size: 1.1rem;
+    }
+}
+
+/* 4. Pour les écrans entre 882px et 991px */
+@media (min-width: 882px) and (max-width: 991px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .tools-board {
+        width: 100%;
+    }
+
+    .drawing-board {
+        width: 100%;
+        height: 600px; /* Ajustez selon vos besoins */
+    }
+
+    .title {
+        font-size: 16px;
+    }
+
+    .buttons button,
+    #add-text-btn, 
+    #show-calculator, 
+    #delete-object, 
+    #add-ruler, 
+    #delete-measurement-text, 
+    #save-json, 
+    .load-json-btn {
+        font-size: 0.9rem;
+        padding: 8px;
+    }
+
+    .calc-btn {
+        padding: 18px;
+        font-size: 1.1rem;
+    }
+}
+
+/* 5. Pour les écrans entre 720px et 881px */
+@media (min-width: 720px) and (max-width: 881px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .tools-board {
+        width: 100%;
+    }
+
+    .drawing-board {
+        width: 100%;
+        height: 500px; /* Ajustez selon vos besoins */
+    }
+
+    .title {
+        font-size: 15px;
+    }
+
+    .buttons button,
+    #add-text-btn, 
+    #show-calculator, 
+    #delete-object, 
+    #add-ruler, 
+    #delete-measurement-text, 
+    #save-json, 
+    .load-json-btn {
+        font-size: 0.85rem;
+        padding: 7px;
+    }
+
+    .calc-btn {
+        padding: 16px;
+        font-size: 1rem;
+    }
+
+    .text-properties {
+        flex-direction: column;
+        gap: 10px;
+        padding: 10px;
+    }
+}
+
+/* 6. Pour les écrans entre 620px et 719px */
+@media (min-width: 620px) and (max-width: 719px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .tools-board {
+        width: 100%;
+    }
+
+    .drawing-board {
+        width: 100%;
+        height: 400px; /* Ajustez selon vos besoins */
+    }
+
+    .title {
+        font-size: 14px;
+    }
+
+    .buttons button,
+    #add-text-btn, 
+    #show-calculator, 
+    #delete-object, 
+    #add-ruler, 
+    #delete-measurement-text, 
+    #save-json, 
+    .load-json-btn {
+        font-size: 0.8rem;
+        padding: 6px;
+    }
+
+    .calc-btn {
+        padding: 14px;
+        font-size: 0.95rem;
+    }
+
+    .text-properties {
+        flex-direction: column;
+        gap: 8px;
+        padding: 8px;
+    }
+}
+
+/* 7. Pour les écrans entre 552px et 619px */
+@media (min-width: 552px) and (max-width: 619px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .tools-board {
+        width: 100%;
+    }
+
+    .drawing-board {
+        width: 100%;
+        height: 350px; /* Ajustez selon vos besoins */
+    }
+
+    .title {
+        font-size: 13px;
+    }
+
+    .buttons button,
+    #add-text-btn, 
+    #show-calculator, 
+    #delete-object, 
+    #add-ruler, 
+    #delete-measurement-text, 
+    #save-json, 
+    .load-json-btn {
+        font-size: 0.75rem;
+        padding: 5px;
+    }
+
+    .calc-btn {
+        padding: 12px;
+        font-size: 0.9rem;
+    }
+
+    .text-properties {
+        flex-direction: column;
+        gap: 6px;
+        padding: 6px;
+    }
+}
+
+/* 8. Pour les écrans entre 414px et 551px */
+@media (min-width: 414px) and (max-width: 551px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .tools-board {
+        width: 100%;
+    }
+
+    .drawing-board {
+        width: 100%;
+        height: 300px; /* Ajustez selon vos besoins */
+    }
+
+    .title {
+        font-size: 12px;
+    }
+
+    .buttons button,
+    #add-text-btn, 
+    #show-calculator, 
+    #delete-object, 
+    #add-ruler, 
+    #delete-measurement-text, 
+    #save-json, 
+    .load-json-btn {
+        font-size: 0.7rem;
+        padding: 4px;
+    }
+
+    .calc-btn {
+        padding: 10px;
+        font-size: 0.8rem;
+    }
+
+    .text-properties {
+        flex-direction: column;
+        gap: 4px;
+        padding: 4px;
+    }
+
+    /* Ajustement de la calculatrice */
+    #calculator-canvas {
+        width: 90%;
+        padding: 15px;
+    }
+
+    #canvas-calc-display {
+        font-size: 1.1rem;
+    }
+
+    .calculator-buttons {
+        gap: 10px;
+    }
+
+    .calc-btn {
+        padding: 10px;
+        font-size: 0.8rem;
+    }
+}
+
+/* 9. Pour les écrans jusqu'à 413px */
+@media (max-width: 413px) {
+    .container {
+        flex-direction: column;
+    }
+
+    .tools-board {
+        width: 100%;
+    }
+
+    .drawing-board {
+        width: 100%;
+        height: 250px; /* Ajustez selon vos besoins */
+    }
+
+    .title {
+        font-size: 11px;
+    }
+
+    .buttons button,
+    #add-text-btn, 
+    #show-calculator, 
+    #delete-object, 
+    #add-ruler, 
+    #delete-measurement-text, 
+    #save-json, 
+    .load-json-btn {
+        font-size: 0.65rem;
+        padding: 3px;
+    }
+
+    .calc-btn {
+        padding: 8px;
+        font-size: 0.8rem;
+    }
+
+    .text-properties {
+        flex-direction: column;
+        gap: 4px;
+        padding: 4px;
+    }
+
+    /* Ajustement de la calculatrice */
+    #calculator-canvas {
+        width: 90%;
+        padding: 10px;
+    }
+
+    #canvas-calc-display {
+        font-size: 1rem;
+    }
+
+    .calculator-buttons {
+        gap: 8px;
+    }
+
+    .calc-btn {
+        padding: 8px;
+        font-size: 0.75rem;
+    }
+}
+
+/* Ajustements généraux pour assurer la réactivité */
+@media (max-width: 1440px) {
+    /* Ajustez la taille du canvas pour les écrans légèrement plus petits */
+    .drawing-board canvas {
+        height: 80vh;
+    }
+}
+
+@media (max-width: 768px) {
+    /* Sur les tablettes, ajustez la disposition si nécessaire */
+    .text-properties {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
