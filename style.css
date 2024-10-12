@@ -703,3 +703,63 @@ section {
         align-items: flex-start;
     }
 }
+
+
+
+/* Styles pour la fenêtre modale */
+.modal {
+    position: fixed;
+    z-index: 10000; /* Assurez-vous que la modale est au-dessus de tout */
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto; /* Permet le défilement si nécessaire */
+    background-color: rgba(0, 0, 0, 0.5); /* Fond semi-transparent */
+}
+
+.modal-content {
+    background-color: #fefefe;
+    margin: 5% auto; /* 5% du haut et centré horizontalement */
+    padding: 20px;
+    border: 1px solid #888;
+    width: 80%; /* Largeur de la modale */
+    max-width: 800px; /* Largeur maximale */
+    border-radius: 10px;
+    text-align: center;
+}
+
+.close-modal {
+    color: #aaa;
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+}
+
+.close-modal:hover,
+.close-modal:focus {
+    color: black;
+    text-decoration: none;
+}
+
+#preview-image {
+    width: 100%;
+    height: auto;
+    border: 1px solid #ddd;
+    margin-bottom: 20px;
+}
+
+#print-btn {
+    padding: 10px 20px;
+    background-color: #4A98F7;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+#print-btn:hover {
+    background-color: #6C757D;
+}

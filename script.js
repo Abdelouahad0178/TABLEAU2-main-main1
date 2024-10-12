@@ -869,3 +869,53 @@ function chargerCanevasJSON(event) {
 // Gestion des Pages de Travail (Similaire à Excel)
 // =============================
 
+// =============================
+// 16. Fonctionnalité d'Aperçu Avant Impression
+// =============================
+
+// Références aux éléments modaux
+const printPreviewBtn = document.getElementById('print-preview-btn');
+const printPreviewModal = document.getElementById('print-preview-modal');
+const closeModalSpan = document.querySelector('.close-modal');
+const previewImage = document.getElementById('preview-image');
+const printBtn = document.getElementById('print-btn');
+
+// Ouvrir la fenêtre modale et afficher l'aperçu du canevas
+printPreviewBtn.addEventListener('click', () => {
+    // Générer l'image du canevas
+    const dataURL = canvas.toDataURL({
+        format: 'png',
+        multiplier: 2
+    });
+    previewImage.src = dataURL;
+    
+    // Afficher la modale
+    printPreviewModal.style.display = 'block';
+});
+
+// Fermer la fenêtre modale lorsqu'on clique sur la croix
+closeModalSpan.addEventListener('click', () => {
+    printPreviewModal.style.display = 'none';
+});
+
+// Fermer la fenêtre modale lorsqu'on clique en dehors de la modale
+window.addEventListener('click', (event) => {
+    if (event.target === printPreviewModal) {
+        printPreviewModal.style.display = 'none';
+    }
+});
+
+// Fonction pour imprimer l'image du canevas
+printBtn.addEventListener('click', () => {
+    const printWindow = window.open('', 'PrintWindow', 'width=800,height=600');
+    printWindow.document.write('<html><head><title>Aperçu Avant Impression</title>');
+    printWindow.document.write('<style>body { display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }</style>');
+    printWindow.document.write('</head><body>');
+    printWindow.document.write(`<img src="${previewImage.src}" alt="Aperçu du Canevas" style="max-width: 100%; height: auto;">`);
+    printWindow.document.write('</body></html>');
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+    printWindow.close();
+});
+
