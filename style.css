@@ -180,7 +180,7 @@ section {
     filter: drop-shadow(0 10px 10px #0009);
 }
 
-#add-text-btn:hover, #show-calculator:hover, #delete-object:hover, #add-ruler:hover, #delete-measurement-text:hover, #save-json:hover, .load-json-btn:hover, #add-table-btn:hover, #rétablir-btn:hover, #annuler-btn:hover, #open-photo-palette-btn:hover,#print-preview-btn:hover {
+#add-text-btn:hover, #show-calculator:hover, #delete-object:hover, #add-ruler:hover, #delete-measurement-text:hover, #save-json:hover, .load-json-btn:hover, #add-table-btn:hover, #rétablir-btn:hover, #annuler-btn:hover, #open-photo-palette-btn:hover,#print-preview-btn {
     background-color: #6C757D;
     color: white;
 }
@@ -413,7 +413,7 @@ section {
     }
 
     .tools-board {
-        width: 220px;
+        width: 20%;
     }
 
     .drawing-board {
@@ -445,16 +445,16 @@ section {
 /* 4. Pour les écrans entre 882px et 991px */
 @media (min-width: 882px) and (max-width: 991px) {
     .container {
-        flex-direction: column;
+        flex-direction: row;
     }
 
     .tools-board {
-        width: 100%;
+        width: 20%;
     }
 
     .drawing-board {
         width: 100%;
-        height: 600px; /* Ajustez selon vos besoins */
+        height: 1240px; /* Ajustez selon vos besoins */
     }
 
     .title {
@@ -482,16 +482,16 @@ section {
 /* 5. Pour les écrans entre 720px et 881px */
 @media (min-width: 720px) and (max-width: 881px) {
     .container {
-        flex-direction: column;
+        flex-direction: row;
     }
 
     .tools-board {
-        width: 100%;
+        width: 20%;
     }
 
     .drawing-board {
         width: 100%;
-        height: 500px; /* Ajustez selon vos besoins */
+        height: 1240px; /* Ajustez selon vos besoins */
     }
 
     .title {
@@ -525,16 +525,16 @@ section {
 /* 6. Pour les écrans entre 620px et 719px */
 @media (min-width: 620px) and (max-width: 719px) {
     .container {
-        flex-direction: column;
+        flex-direction: row;
     }
 
     .tools-board {
-        width: 100%;
+        width: 20%;
     }
 
     .drawing-board {
         width: 100%;
-        height: 400px; /* Ajustez selon vos besoins */
+        height: 1240px; /* Ajustez selon vos besoins */
     }
 
     .title {
@@ -568,20 +568,20 @@ section {
 /* 7. Pour les écrans entre 552px et 619px */
 @media (min-width: 552px) and (max-width: 619px) {
     .container {
-        flex-direction: column;
+        flex-direction: row;
     }
 
     .tools-board {
-        width: 100%;
+        width: 20%;
     }
 
     .drawing-board {
         width: 100%;
-        height: 350px; /* Ajustez selon vos besoins */
+        height: 820px; /* Ajustez selon vos besoins */
     }
 
     .title {
-        font-size: 13px;
+        font-size: 10px;
     }
 
     .buttons button,
@@ -611,20 +611,20 @@ section {
 /* 8. Pour les écrans entre 414px et 551px */
 @media (min-width: 414px) and (max-width: 551px) {
     .container {
-        flex-direction: column;
+        flex-direction: row;
     }
 
     .tools-board {
-        width: 100%;
+        width: 30%;
     }
 
     .drawing-board {
         width: 100%;
-        height: 300px; /* Ajustez selon vos besoins */
+        height: 800px; /* Ajustez selon vos besoins */
     }
 
     .title {
-        font-size: 12px;
+        font-size: 10px;
     }
 
     .buttons button,
@@ -673,20 +673,20 @@ section {
 /* 9. Pour les écrans jusqu'à 413px */
 @media (max-width: 413px) {
     .container {
-        flex-direction: column;
+        flex-direction: row;
     }
 
     .tools-board {
-        width: 100%;
+        width: 39%;
     }
 
     .drawing-board {
         width: 100%;
-        height: 250px; /* Ajustez selon vos besoins */
+        height: 800px; /* Ajustez selon vos besoins */
     }
 
     .title {
-        font-size: 11px;
+        font-size: 8px;
     }
 
     .buttons button,
@@ -736,7 +736,7 @@ section {
 @media (max-width: 1440px) {
     /* Ajustez la taille du canvas pour les écrans légèrement plus petits */
     .drawing-board canvas {
-        height: 80vh;
+        height: 90vh;
     }
 }
 
