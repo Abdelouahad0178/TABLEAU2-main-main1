@@ -1,711 +1,1283 @@
-// =============================
-// 1. Initialisation du Canevas
-// =============================
+document.addEventListener('DOMContentLoaded', () => {
+    const canvas = new fabric.Canvas('canvas', {
+        isDrawingMode: false,
+        backgroundColor: 'white',
+        width: 1130,
+        height: 1440
+    });
 
-// Initialiser le canevas Fabric.js
-
-
-
-
-
-
-
-const canvas = new fabric.Canvas('canvas', {
-    isDrawingMode: false,
-    backgroundColor: 'white',
-    width: 1130,
-    height:1440
+    // Initialiser les modules
+    const app = new App(canvas);
+    app.init();
 });
 
-// Variables pour convertir les pixels en centimètres
-const pixelsPerCm = 37.7952755906;
-
-// Référence au menu des propriétés de texte
-const textPropertiesMenu = document.getElementById('text-properties-menu');
-
-// Variable pour stocker le nom du fichier JSON chargé
-let nomFichierJSON = null;
-
-
-
-
-
-
-// =============================
-// 2. Gestion des Formes et Mesures
-// =============================
-
-// Fonction pour ajouter une règle comme forme
-function addRulerShape() {
-    const ruler = new fabric.Line([100, 100, 400, 100], {
-        stroke: 'black',
-        strokeWidth: 3,
-        selectable: true,
-        hasBorders: true,
-        hasControls: true,
-        originX: 'center',
-        originY: 'center'
-    });
-
-    const rulerText = new fabric.Text('0 dm', {
-        fontSize: 14,
-        fill: 'black',
-        selectable: false,
-        originX: 'center',
-        originY: 'center'
-    });
-
-    canvas.add(ruler);
-    canvas.add(rulerText);
-    updateRulerShapeLength(ruler, rulerText);
-
-    // Mettre à jour la longueur lors de la modification
-    ruler.on('modified', () => updateRulerShapeLength(ruler, rulerText));
-    ruler.on('moving', () => updateRulerShapeLength(ruler, rulerText));
-    ruler.on('scaling', () => updateRulerShapeLength(ruler, rulerText));
-
-    // Supprimer le texte de mesure lorsque la règle est supprimée
-    ruler.on('removed', () => {
-        canvas.remove(rulerText);
-    });
-
-    // Associer le texte de mesure à la règle
-    ruler.rulerText = rulerText;
-}
-
-// Fonction pour mettre à jour la longueur de la règle et repositionner le texte
-function updateRulerShapeLength(ruler, rulerText) {
-    const lengthInCm = ruler.getScaledWidth() / pixelsPerCm;
-    if (lengthInCm >= 100) {
-        const lengthInMeters = (lengthInCm / 100).toFixed(2);
-        rulerText.set({ text: `${lengthInMeters} m` });
-    } else {
-        rulerText.set({ text: `${lengthInCm.toFixed(2)} dm` });
+// Module Principal
+class App {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.history = new HistoryModule(this.canvas);
+        this.color = new ColorModule(this.canvas);
+        this.brush = new BrushModule(this.canvas, this.color);
+        this.shapes = new ShapesModule(this.canvas, this.color, this.history);
+        this.text = new TextModule(this.canvas, this.history);
+        this.calculator = new CalculatorModule();
+        this.importExport = new ImportExportModule(this.canvas, this.history);
+        this.printPreview = new PrintPreviewModule(this.canvas); // Module d'Aperçu Avant Impression
+        this.duplicate = new DuplicateModule(this.canvas, this.history);
+        this.photoPalette = new PhotoPaletteModule(this.canvas, this.history);
     }
 
-    // Positionner le texte au milieu de la règle
-    rulerText.set({
-        left: ruler.left,
-        top: ruler.top - 20,
-        originX: 'center',
-        originY: 'center',
-        angle: ruler.angle
-    });
-
-    // Mettre à jour le canevas
-    canvas.bringToFront(rulerText);
-    canvas.renderAll();
+    init() {
+        this.history.init();
+        this.color.init();
+        this.brush.init();
+        this.shapes.init();
+        this.text.init();
+        this.calculator.init();
+        this.importExport.init();
+        this.printPreview.init(); // Initialiser le module d'Aperçu Avant Impression
+        this.duplicate.init();
+        this.photoPalette.init();
+    }
 }
 
-// Fonction pour ajouter les mesures d'une forme
-function addShapeMeasurements(shape) {
-    const measurementText = new fabric.Text('', {
-        fontSize: 14,
-        fill: 'black',
-        selectable: false,
-        originX: 'center',
-        originY: 'center'
-    });
-    canvas.add(measurementText);
-    updateShapeMeasurements(shape, measurementText);
-
-    // Associer le texte de mesure à la forme
-    shape.measurementText = measurementText;
-    shape.measurementTextActive = true; // Indicateur pour savoir si le texte de mesure est actif
-
-    // Mettre à jour les mesures lors de la modification de la forme
-    shape.on('modified', () => {
-        if (shape.measurementTextActive) {
-            updateShapeMeasurements(shape, measurementText);
-        }
-    });
-    shape.on('scaling', () => {
-        if (shape.measurementTextActive) {
-            updateShapeMeasurements(shape, measurementText);
-        }
-    });
-    shape.on('moving', () => {
-        if (shape.measurementTextActive) {
-            updateShapeMeasurements(shape, measurementText);
-        }
-    });
-
-    // Supprimer le texte de mesure lorsque la forme est supprimée
-    shape.on('removed', () => {
-        canvas.remove(measurementText);
-    });
-}
-
-// Fonction pour mettre à jour les mesures de la forme
-function updateShapeMeasurements(shape, measurementText) {
-    let measurements = '';
-    if (shape.type === 'rect') {
-        const width = (shape.getScaledWidth() / pixelsPerCm).toFixed(2);
-        const height = (shape.getScaledHeight() / pixelsPerCm).toFixed(2);
-        measurements = `L: ${width} dm, H: ${height} dm`;
-    } else if (shape.type === 'circle') {
-        const radius = (shape.radius * shape.scaleX / pixelsPerCm).toFixed(2);
-        const diameter = (2 * shape.radius * shape.scaleX / pixelsPerCm).toFixed(2);
-        measurements = `R: ${radius} dm, D: ${diameter} dm`;
-    } else if (shape.type === 'triangle') {
-        const a = (shape.width * shape.scaleX / pixelsPerCm).toFixed(2);
-        const b = (shape.height * shape.scaleY / pixelsPerCm).toFixed(2);
-        const c = (Math.sqrt(Math.pow(shape.width, 2) + Math.pow(shape.height, 2)) * shape.scaleX / pixelsPerCm).toFixed(2);
-        measurements = `Côtés: A: ${a} dm, B: ${b} dm, C: ${c} dm`;
-    }
-    measurementText.set({
-        text: measurements,
-        left: shape.left,
-        top: shape.top - 20
-    });
-    canvas.bringToFront(measurementText);
-    canvas.renderAll();
-}
-
-// =============================
-// 3. Outils de Dessin (Pinceau, Gomme)
-// =============================
-
-// Activer le pinceau
-document.getElementById('brush').addEventListener('click', () => {
-    canvas.isDrawingMode = true;
-    canvas.selection = false;
-    canvas.freeDrawingBrush.color = getSelectedColor();
-});
-
-// Activer la gomme
-document.getElementById('eraser').addEventListener('click', () => {
-    canvas.isDrawingMode = true;
-    canvas.freeDrawingBrush.color = "white";
-});
-
-// Désactiver le pinceau après avoir dessiné
-canvas.on('mouse:up', () => {
-    canvas.isDrawingMode = false;
-    canvas.selection = true;
-});
-
-// Ajuster la taille du pinceau/gomme
-document.querySelector("#size-slider").addEventListener('change', (e) => {
-    const size = parseInt(e.target.value, 10);
-    canvas.freeDrawingBrush.width = size;
-});
-
-// =============================
-// 4. Gestion des Couleurs
-// =============================
-
-// Fonction pour obtenir la couleur sélectionnée
-function getSelectedColor() {
-    const selectedColorBtn = document.querySelector(".colors .selected");
-    if (selectedColorBtn) {
-        return window.getComputedStyle(selectedColorBtn).getPropertyValue("background-color");
-    }
-    return "#000000"; // Valeur par défaut
-}
-
-// Gestion des couleurs pour le pinceau
-document.querySelectorAll(".colors .option").forEach(btn => {
-    btn.addEventListener('click', () => {
-        document.querySelector(".colors .selected").classList.remove("selected");
-        btn.classList.add("selected");
-        canvas.freeDrawingBrush.color = getSelectedColor();
-    });
-});
-
-// Sélecteur de couleur personnalisé
-document.querySelector("#color-picker").addEventListener("change", (e) => {
-    canvas.freeDrawingBrush.color = e.target.value;
-    document.querySelector(".colors .selected").classList.remove("selected");
-    e.target.parentElement.classList.add("selected");
-});
-
-// Sélecteur de couleur pour les formes
-const shapeColorPicker = document.getElementById('shape-color-picker');
-
-// =============================
-// 5. Manipulation des Objets (Ajouter, Supprimer, Dupliquer)
-// =============================
-
-// Ajouter des formes avec couleur sélectionnée
-document.getElementById('rectangle').addEventListener('click', () => {
-    const color = shapeColorPicker.value;
-    const rect = new fabric.Rect({
-        width: 100,
-        height: 100,
-        left: 150,
-        top: 100,
-        fill: 'transparent',
-        stroke: color,
-        strokeWidth: 2
-    });
-    canvas.add(rect);
-    addShapeMeasurements(rect);
-});
-
-document.getElementById('circle').addEventListener('click', () => {
-    const color = shapeColorPicker.value;
-    const circle = new fabric.Circle({
-        radius: 50,
-        left: 150,
-        top: 100,
-        fill: 'transparent',
-        stroke: color,
-        strokeWidth: 2
-    });
-    canvas.add(circle);
-    addShapeMeasurements(circle);
-});
-
-document.getElementById('triangle').addEventListener('click', () => {
-    const color = shapeColorPicker.value;
-    const triangle = new fabric.Triangle({
-        width: 100,
-        height: 100,
-        left: 150,
-        top: 100,
-        fill: 'transparent',
-        stroke: color,
-        strokeWidth: 2
-    });
-    canvas.add(triangle);
-    addShapeMeasurements(triangle);
-});
-
-// Ajouter la règle comme forme sur le canevas
-document.getElementById('add-ruler').addEventListener('click', addRulerShape);
-
-// Ajouter un tableau sur le canevas
-document.getElementById('add-table-btn').addEventListener('click', () => {
-    const rows = parseInt(prompt("Nombre de lignes ?", "3"), 10);
-    const cols = parseInt(prompt("Nombre de colonnes ?", "3"), 10);
-
-    if (!isNaN(rows) && !isNaN(cols) && rows > 0 && cols > 0) {
-        addTable(rows, cols);
-    } else {
-        alert("Veuillez entrer des valeurs valides pour les lignes et les colonnes.");
-    }
-});
-
-// Fonction pour ajouter un tableau sur le canevas
-function addTable(rows = 3, cols = 3) {
-    const tableGroup = new fabric.Group([], {
-        selectable: true,
-        hasBorders: true,
-        hasControls: true,
-        left: 150,
-        top: 100
-    });
-
-    const cellWidth = 60;
-    const cellHeight = 30;
-
-    // Créer le tableau
-    for (let row = 0; row < rows; row++) {
-        for (let col = 0; col < cols; col++) {
-            // Créer une cellule
-            const cell = new fabric.Rect({
-                left: col * cellWidth,
-                top: row * cellHeight,
-                width: cellWidth,
-                height: cellHeight,
-                fill: 'transparent',
-                stroke: 'black',
-                strokeWidth: 1,
-                selectable: false
-            });
-
-            // Créer le texte de la cellule
-            const cellText = new fabric.Textbox('', {
-                left: col * cellWidth + 5,
-                top: row * cellHeight + 5,
-                fontSize: 12,
-                width: cellWidth - 10,
-                height: cellHeight - 10,
-                selectable: true,
-                editable: true,
-                textAlign: 'center'
-            });
-
-            // Ajouter la cellule et le texte au groupe
-            tableGroup.addWithUpdate(cell);
-            tableGroup.addWithUpdate(cellText);
-        }
+// Module de Gestion de l'Historique (Annuler/Rétablir)
+class HistoryModule {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.historique = [];
+        this.pileRetablir = [];
     }
 
-    // Ajouter le groupe de tableau au canevas
-    canvas.add(tableGroup);
-    canvas.setActiveObject(tableGroup);
-    canvas.renderAll();
-}
+    init() {
+        // Enregistrer l'état initial
+        this.enregistrerEtat();
 
-// Supprimer l'objet sélectionné
-document.getElementById('delete-object').addEventListener("click", () => {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-        canvas.remove(activeObject);
-        canvas.renderAll();
-    } else {
-        alert("Aucun objet sélectionné !");
-    }
-});
+        this.canvas.on('object:added', () => this.enregistrerEtat());
+        this.canvas.on('object:removed', () => this.enregistrerEtat());
+        this.canvas.on('object:modified', () => this.enregistrerEtat());
 
-// Fonction pour supprimer le texte de mesure associé à l'objet sélectionné
-function supprimerTexteDeMesure() {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-        const associatedText = activeObject.measurementText || activeObject.rulerText;
-        if (associatedText) {
-            canvas.remove(associatedText);
-            if (activeObject.measurementText) {
-                activeObject.measurementTextActive = false; // Désactiver l'indicateur pour empêcher la recréation du texte
-                delete activeObject.measurementText; // Supprimer la référence au texte de mesure
-            }
-            if (activeObject.rulerText) {
-                delete activeObject.rulerText; // Supprimer la référence au texte de la règle
-            }
-            canvas.renderAll();
+        const annulerBtn = document.getElementById('annuler-btn');
+        const retablirBtn = document.getElementById('rétablir-btn');
+
+        if (annulerBtn) {
+            annulerBtn.addEventListener('click', () => this.annuler());
         } else {
-            alert("Aucun texte de mesure associé à cet objet !");
+            console.warn("Le bouton 'Annuler' avec l'ID 'annuler-btn' est introuvable.");
         }
-    } else {
-        alert("Aucun objet sélectionné !");
+
+        if (retablirBtn) {
+            retablirBtn.addEventListener('click', () => this.retablir());
+        } else {
+            console.warn("Le bouton 'Rétablir' avec l'ID 'rétablir-btn' est introuvable.");
+        }
+    }
+
+    enregistrerEtat() {
+        // Enregistrer l'état actuel du canevas
+        const etat = JSON.stringify(this.canvas.toJSON());
+        this.historique.push(etat);
+        // Limiter la taille de l'historique si nécessaire
+        if (this.historique.length > 50) {
+            this.historique.shift();
+        }
+        // Vider la pile de rétablissement
+        this.pileRetablir = [];
+    }
+
+    annuler() {
+        if (this.historique.length > 1) { // Garder au moins un état
+            const dernierEtat = this.historique.pop();
+            this.pileRetablir.push(dernierEtat);
+            const etatPrecedent = this.historique[this.historique.length - 1];
+            this.canvas.loadFromJSON(etatPrecedent, () => {
+                this.canvas.renderAll();
+                alert("Action annulée !");
+            });
+        } else {
+            alert("Aucune action à annuler !");
+        }
+    }
+
+    retablir() {
+        if (this.pileRetablir.length > 0) {
+            const prochainEtat = this.pileRetablir.pop();
+            this.historique.push(prochainEtat);
+            this.canvas.loadFromJSON(prochainEtat, () => {
+                this.canvas.renderAll();
+                alert("Action rétablie !");
+            });
+        } else {
+            alert("Aucune action à rétablir !");
+        }
     }
 }
 
-// Ajouter un événement pour le bouton "Supprimer le texte de mesure"
-document.getElementById('delete-measurement-text').addEventListener("click", supprimerTexteDeMesure);
+// Module de Gestion des Couleurs
+class ColorModule {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.selectedColorBtn = null;
+        this.selectedShapeColor = '#000000'; // Valeur par défaut pour la couleur des formes
+    }
 
-// Créer un bouton de duplication dynamiquement
-const duplicateBtn = document.createElement('button');
-duplicateBtn.innerHTML = '+';
-duplicateBtn.classList.add('duplicate-btn');
-document.body.appendChild(duplicateBtn);
-duplicateBtn.style.display = 'none'; // Masquer le bouton de duplication par défaut
+    init() {
+        this.setupColorOptions();
+        this.setupCustomColorPicker();
+        this.setupShapeColorPicker();
+    }
 
-// Fonction pour dupliquer un objet
-duplicateBtn.addEventListener('click', () => {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-        activeObject.clone(function(clonedObj) {
-            clonedObj.set({
-                left: activeObject.left + 30,
-                top: activeObject.top + 30,
-                evented: true
+    setupColorOptions() {
+        const colorOptions = document.querySelectorAll(".colors .option");
+        colorOptions.forEach(btn => {
+            btn.addEventListener('click', () => {
+                if (btn.querySelector('input[type="color"]')) {
+                    // Si c'est le sélecteur de couleur personnalisé
+                    return;
+                }
+
+                if (this.selectedColorBtn) {
+                    this.selectedColorBtn.classList.remove("selected");
+                }
+                btn.classList.add("selected");
+                this.selectedColorBtn = btn;
+                this.canvas.freeDrawingBrush.color = this.getBrushColor();
             });
-            canvas.add(clonedObj);
-            canvas.setActiveObject(clonedObj);
-            if (clonedObj.type !== 'line') {
-                addShapeMeasurements(clonedObj);
-            } else {
-                addRulerShape(clonedObj);
-            }
-            canvas.renderAll();
         });
     }
-    hideDuplicateButton();
-});
 
-// Afficher le bouton "+" quand un objet est sélectionné
-function showDuplicateButton() {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-        duplicateBtn.style.display = 'block';
+    setupCustomColorPicker() {
+        const customColorPicker = document.querySelector("#color-picker");
+        if (customColorPicker) {
+            customColorPicker.addEventListener("change", (e) => {
+                this.canvas.freeDrawingBrush.color = e.target.value;
+                if (this.selectedColorBtn) {
+                    this.selectedColorBtn.classList.remove("selected");
+                }
+                customColorPicker.parentElement.classList.add("selected");
+                this.selectedColorBtn = customColorPicker.parentElement;
+            });
+        } else {
+            console.warn("Le sélecteur de couleur personnalisé avec l'ID 'color-picker' est introuvable.");
+        }
+    }
+
+    setupShapeColorPicker() {
+        const shapeColorPicker = document.getElementById('shape-color-picker');
+        if (shapeColorPicker) {
+            shapeColorPicker.addEventListener('change', (e) => {
+                this.selectedShapeColor = e.target.value;
+            });
+        } else {
+            console.warn("Le sélecteur de couleur des formes avec l'ID 'shape-color-picker' est introuvable.");
+        }
+    }
+
+    getBrushColor() {
+        if (this.selectedColorBtn) {
+            return window.getComputedStyle(this.selectedColorBtn).getPropertyValue("background-color");
+        }
+        return "#000000"; // Valeur par défaut
+    }
+
+    getShapeColor() {
+        return this.selectedShapeColor;
     }
 }
 
-// Masquer le bouton "+"
-function hideDuplicateButton() {
-    duplicateBtn.style.display = 'none';
-}
-
-canvas.on('selection:created', showDuplicateButton);
-canvas.on('selection:updated', showDuplicateButton);
-canvas.on('selection:cleared', hideDuplicateButton);
-
-// =============================
-// 6. Gestion du Texte
-// =============================
-
-// Fonction pour ajouter du texte
-document.getElementById('add-text-btn').addEventListener('click', () => {
-    const text = new fabric.IText('Entrez votre texte', {
-        left: 150,
-        top: 100,
-        fontSize: 20,
-        fontFamily: 'Arial',
-        fill: '#000000',
-        editable: true,
-        selectable: true
-    });
-    canvas.add(text);
-    canvas.setActiveObject(text);
-    canvas.renderAll();
-});
-
-// Références aux éléments du menu de propriétés
-const fontFamilySelect = document.getElementById('font-family');
-const fontSizeInput = document.getElementById('font-size');
-const fontWeightSelect = document.getElementById('font-weight');
-const textColorInput = document.getElementById('text-color');
-
-// Afficher le menu des propriétés de texte lorsque du texte est sélectionné, sinon le masquer
-canvas.on('selection:created', (e) => {
-    const selected = e.selected[0];
-    if (selected && selected.type === 'i-text') {
-        textPropertiesMenu.style.display = 'flex'; // Afficher le menu des propriétés de texte
-        updateTextPropertiesMenu(selected); // Mettre à jour les propriétés du menu en fonction du texte sélectionné
-    } else {
-        textPropertiesMenu.style.display = 'none'; // Masquer le menu des propriétés de texte
+// Module de Gestion du Pinceau et de la Gomme
+class BrushModule {
+    constructor(canvas, colorModule) {
+        this.canvas = canvas;
+        this.colorModule = colorModule;
+        this.sizeSlider = document.querySelector("#size-slider");
     }
-});
 
-// Masquer le menu des propriétés lorsque la sélection est effacée
-canvas.on('selection:cleared', () => {
-    textPropertiesMenu.style.display = 'none'; // Masquer le menu des propriétés de texte
-});
-
-// Mettre à jour les propriétés du menu en fonction de l'objet sélectionné
-function updateTextPropertiesMenu(text) {
-    fontFamilySelect.value = text.fontFamily || 'Arial';
-    fontSizeInput.value = text.fontSize || 20;
-    fontWeightSelect.value = text.fontWeight || 'normal';
-    textColorInput.value = text.fill || '#000000';
-}
-
-// Appliquer les modifications au texte sélectionné
-fontFamilySelect.addEventListener('change', () => {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject && activeObject.type === 'i-text') {
-        activeObject.set('fontFamily', fontFamilySelect.value);
-        canvas.renderAll();
+    init() {
+        this.setupBrush();
+        this.setupEraser();
+        this.setupSizeSlider();
+        this.setupMouseUp();
     }
-});
 
-fontSizeInput.addEventListener('input', () => {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject && activeObject.type === 'i-text') {
-        activeObject.set('fontSize', parseInt(fontSizeInput.value, 10));
-        canvas.renderAll();
+    setupBrush() {
+        const brushBtn = document.getElementById('brush');
+        if (brushBtn) {
+            brushBtn.addEventListener('click', () => {
+                this.canvas.isDrawingMode = true;
+                this.canvas.selection = false;
+                this.canvas.freeDrawingBrush.color = this.colorModule.getBrushColor();
+                this.canvas.freeDrawingBrush.width = parseInt(this.sizeSlider.value, 10);
+            });
+        } else {
+            console.warn("Le bouton 'Pinceau' avec l'ID 'brush' est introuvable.");
+        }
     }
-});
 
-fontWeightSelect.addEventListener('change', () => {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject && activeObject.type === 'i-text') {
-        activeObject.set('fontWeight', fontWeightSelect.value);
-        canvas.renderAll();
+    setupEraser() {
+        const eraserBtn = document.getElementById('eraser');
+        if (eraserBtn) {
+            eraserBtn.addEventListener('click', () => {
+                this.canvas.isDrawingMode = true;
+                this.canvas.freeDrawingBrush.color = "white";
+                this.canvas.freeDrawingBrush.width = parseInt(this.sizeSlider.value, 10);
+            });
+        } else {
+            console.warn("Le bouton 'Gomme' avec l'ID 'eraser' est introuvable.");
+        }
     }
-});
 
-textColorInput.addEventListener('input', () => {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject && activeObject.type === 'i-text') {
-        activeObject.set('fill', textColorInput.value);
-        canvas.renderAll();
+    setupSizeSlider() {
+        if (this.sizeSlider) {
+            this.sizeSlider.addEventListener('change', (e) => {
+                const size = parseInt(e.target.value, 10);
+                if (this.canvas.isDrawingMode) {
+                    this.canvas.freeDrawingBrush.width = size;
+                }
+            });
+        } else {
+            console.warn("Le curseur de taille avec l'ID 'size-slider' est introuvable.");
+        }
     }
-});
 
-// =============================
-// 7. Fonctionnalités Supplémentaires (Calculatrice, Tableau)
-// =============================
-
-// Variables pour la calculatrice
-const calculatorCanvas = document.getElementById("calculator-canvas");
-const showCalculatorBtn = document.getElementById("show-calculator");
-const canvasCalcDisplay = document.getElementById("canvas-calc-display");
-const canvasCalcButtons = document.querySelectorAll("#calculator-canvas .calc-btn");
-const closeCanvasCalculatorBtn = document.getElementById("close-canvas-calculator");
-
-// Variables pour le glisser-déposer de la calculatrice
-let isDragging = false;
-let offsetX, offsetY;
-
-// Fonction pour obtenir les coordonnées du pointeur (souris ou tactile)
-function getPointerPosition(e) {
-    if (e.touches) {
-        // Pour les écrans tactiles
-        return { x: e.touches[0].clientX, y: e.touches[0].clientY };
-    } else {
-        // Pour les appareils non tactiles
-        return { x: e.clientX, y: e.clientY };
+    setupMouseUp() {
+        this.canvas.on('mouse:up', () => {
+            this.canvas.isDrawingMode = false;
+            this.canvas.selection = true;
+            this.canvas.freeDrawingBrush.color = this.colorModule.getBrushColor();
+            this.canvas.freeDrawingBrush.width = parseInt(this.sizeSlider.value, 10);
+        });
     }
 }
 
-// Fonction pour commencer le glissement
-function startDrag(e) {
-    isDragging = true;
-    const pointer = getPointerPosition(e);
-    offsetX = pointer.x - calculatorCanvas.offsetLeft;
-    offsetY = pointer.y - calculatorCanvas.offsetTop;
-    calculatorCanvas.style.cursor = 'move'; // Changer le curseur pendant le glissement
-    e.preventDefault(); // Empêcher le comportement par défaut (comme le défilement)
-}
+// Module de Gestion des Formes et Mesures
+class ShapesModule {
+    constructor(canvas, colorModule, historyModule) {
+        this.canvas = canvas;
+        this.colorModule = colorModule;
+        this.history = historyModule;
+        this.pixelsPerCm = 37.7952755906; // Conversion pixels en cm (approximation)
+    }
 
-// Fonction pour déplacer la calculatrice
-function drag(e) {
-    if (isDragging) {
-        const pointer = getPointerPosition(e);
-        calculatorCanvas.style.left = `${pointer.x - offsetX}px`;
-        calculatorCanvas.style.top = `${pointer.y - offsetY}px`;
+    init() {
+        this.setupShapeButtons();
+        this.setupAddRuler();
+        this.setupAddTable();
+    }
+
+    setupShapeButtons() {
+        const rectangleBtn = document.getElementById('rectangle');
+        const circleBtn = document.getElementById('circle');
+        const triangleBtn = document.getElementById('triangle');
+
+        if (rectangleBtn) {
+            rectangleBtn.addEventListener('click', () => this.addRectangle());
+        } else {
+            console.warn("Le bouton 'Rectangle' avec l'ID 'rectangle' est introuvable.");
+        }
+
+        if (circleBtn) {
+            circleBtn.addEventListener('click', () => this.addCircle());
+        } else {
+            console.warn("Le bouton 'Cercle' avec l'ID 'circle' est introuvable.");
+        }
+
+        if (triangleBtn) {
+            triangleBtn.addEventListener('click', () => this.addTriangle());
+        } else {
+            console.warn("Le bouton 'Triangle' avec l'ID 'triangle' est introuvable.");
+        }
+    }
+
+    // Méthode pour obtenir le type de remplissage sélectionné
+    getFillOption() {
+        const filledRadio = document.querySelector('input[name="shape-fill"]:checked');
+        if (filledRadio) {
+            return filledRadio.value === 'filled' ? 'filled' : 'empty';
+        }
+        return 'filled'; // Valeur par défaut
+    }
+
+    addRectangle() {
+        const color = this.colorModule.getShapeColor();
+        const fillOption = this.getFillOption();
+        const rect = new fabric.Rect({
+            width: 100,
+            height: 100,
+            left: 150,
+            top: 100,
+            fill: fillOption === 'filled' ? color : 'transparent', // Remplissage
+            stroke: color, // Contour
+            strokeWidth: 2
+        });
+        this.canvas.add(rect);
+        this.history.enregistrerEtat();
+        this.addShapeMeasurements(rect);
+    }
+
+    addCircle() {
+        const color = this.colorModule.getShapeColor();
+        const fillOption = this.getFillOption();
+        const circle = new fabric.Circle({
+            radius: 50,
+            left: 150,
+            top: 100,
+            fill: fillOption === 'filled' ? color : 'transparent', // Remplissage
+            stroke: color, // Contour
+            strokeWidth: 2
+        });
+        this.canvas.add(circle);
+        this.history.enregistrerEtat();
+        this.addShapeMeasurements(circle);
+    }
+
+    addTriangle() {
+        const color = this.colorModule.getShapeColor();
+        const fillOption = this.getFillOption();
+        const triangle = new fabric.Triangle({
+            width: 100,
+            height: 100,
+            left: 150,
+            top: 100,
+            fill: fillOption === 'filled' ? color : 'transparent', // Remplissage
+            stroke: color, // Contour
+            strokeWidth: 2
+        });
+        this.canvas.add(triangle);
+        this.history.enregistrerEtat();
+        this.addShapeMeasurements(triangle);
+    }
+
+    setupAddRuler() {
+        const addRulerBtn = document.getElementById('add-ruler');
+        if (addRulerBtn) {
+            addRulerBtn.addEventListener('click', () => this.addRulerShape());
+        } else {
+            console.warn("Le bouton 'Ajouter une règle' avec l'ID 'add-ruler' est introuvable.");
+        }
+    }
+
+    addRulerShape() {
+        const rulerColor = this.colorModule.getShapeColor(); // Utiliser la couleur sélectionnée pour la règle
+        const ruler = new fabric.Line([100, 100, 400, 100], {
+            stroke: rulerColor, // Défini le contour avec la couleur sélectionnée
+            strokeWidth: 3,
+            selectable: true,
+            hasBorders: true,
+            hasControls: true,
+            originX: 'center',
+            originY: 'center'
+        });
+
+        const rulerText = new fabric.Text('0 dm', {
+            fontSize: 14,
+            fill: 'black',
+            selectable: false,
+            originX: 'center',
+            originY: 'center'
+        });
+
+        // Grouper la ligne et le texte pour un déplacement fluide
+        const rulerGroup = new fabric.Group([ruler, rulerText], {
+            left: 150,
+            top: 100,
+            selectable: true,
+            hasBorders: true,
+            hasControls: true
+        });
+
+        this.canvas.add(rulerGroup);
+        this.history.enregistrerEtat();
+        this.updateRulerShapeLength(rulerGroup, rulerText);
+
+        rulerGroup.on('modified', () => this.updateRulerShapeLength(rulerGroup, rulerText));
+        rulerGroup.on('moving', () => this.updateRulerShapeLength(rulerGroup, rulerText));
+        rulerGroup.on('scaling', () => this.updateRulerShapeLength(rulerGroup, rulerText));
+
+        rulerGroup.on('removed', () => {
+            this.canvas.remove(rulerText);
+        });
+
+        rulerGroup.rulerText = rulerText;
+    }
+
+    updateRulerShapeLength(rulerGroup, rulerText) {
+        const ruler = rulerGroup.item(0); // La ligne
+        const lengthInCm = ruler.getScaledWidth() / this.pixelsPerCm;
+        if (lengthInCm >= 100) {
+            const lengthInMeters = (lengthInCm / 100).toFixed(2);
+            rulerText.set({ text: `${lengthInMeters} m` });
+        } else {
+            rulerText.set({ text: `${lengthInCm.toFixed(2)} dm` });
+        }
+
+        // Positionner le texte au milieu de la règle
+        rulerText.set({
+            left: ruler.left + ruler.getScaledWidth() / 2,
+            top: ruler.top - 20,
+            originX: 'center',
+            originY: 'center',
+            angle: ruler.angle
+        });
+
+        // Mettre à jour le canevas
+        this.canvas.bringToFront(rulerText);
+        this.canvas.renderAll();
+    }
+
+    addShapeMeasurements(shape) {
+        const measurementText = new fabric.Text('', {
+            fontSize: 14,
+            fill: 'black',
+            selectable: false,
+            originX: 'center',
+            originY: 'center'
+        });
+        this.canvas.add(measurementText);
+        this.history.enregistrerEtat();
+        this.updateShapeMeasurements(shape, measurementText);
+
+        shape.measurementText = measurementText;
+        shape.measurementTextActive = true;
+
+        shape.on('modified', () => {
+            if (shape.measurementTextActive) {
+                this.updateShapeMeasurements(shape, measurementText);
+            }
+        });
+        shape.on('scaling', () => {
+            if (shape.measurementTextActive) {
+                this.updateShapeMeasurements(shape, measurementText);
+            }
+        });
+        shape.on('moving', () => {
+            if (shape.measurementTextActive) {
+                this.updateShapeMeasurements(shape, measurementText);
+            }
+        });
+
+        shape.on('removed', () => {
+            this.canvas.remove(measurementText);
+        });
+    }
+
+    updateShapeMeasurements(shape, measurementText) {
+        let measurements = '';
+        if (shape.type === 'rect') {
+            const width = (shape.getScaledWidth() / this.pixelsPerCm).toFixed(2);
+            const height = (shape.getScaledHeight() / this.pixelsPerCm).toFixed(2);
+            measurements = `L: ${width} dm, H: ${height} dm`;
+        } else if (shape.type === 'circle') {
+            const radius = (shape.radius * shape.scaleX / this.pixelsPerCm).toFixed(2);
+            const diameter = (2 * shape.radius * shape.scaleX / this.pixelsPerCm).toFixed(2);
+            measurements = `R: ${radius} dm, D: ${diameter} dm`;
+        } else if (shape.type === 'triangle') {
+            const a = (shape.width * shape.scaleX / this.pixelsPerCm).toFixed(2);
+            const b = (shape.height * shape.scaleY / this.pixelsPerCm).toFixed(2);
+            const c = (Math.sqrt(Math.pow(shape.width, 2) + Math.pow(shape.height, 2)) * shape.scaleX / this.pixelsPerCm).toFixed(2);
+            measurements = `Côtés: A: ${a} dm, B: ${b} dm, C: ${c} dm`;
+        }
+        measurementText.set({
+            text: measurements,
+            left: shape.left,
+            top: shape.top - 20
+        });
+        this.canvas.bringToFront(measurementText);
+        this.canvas.renderAll();
+    }
+
+    setupAddTable() {
+        const addTableBtn = document.getElementById('add-table-btn');
+        if (addTableBtn) {
+            addTableBtn.addEventListener('click', () => {
+                const rows = parseInt(prompt("Nombre de lignes ?", "3"), 10);
+                const cols = parseInt(prompt("Nombre de colonnes ?", "3"), 10);
+
+                if (!isNaN(rows) && !isNaN(cols) && rows > 0 && cols > 0) {
+                    this.addTable(rows, cols);
+                } else {
+                    alert("Veuillez entrer des valeurs valides pour les lignes et les colonnes.");
+                }
+            });
+        } else {
+            console.warn("Le bouton 'Ajouter un Tableau' avec l'ID 'add-table-btn' est introuvable.");
+        }
+    }
+
+    addTable(rows = 3, cols = 3) {
+        const tableGroup = new fabric.Group([], {
+            selectable: true,
+            hasBorders: true,
+            hasControls: true,
+            left: 150,
+            top: 100
+        });
+
+        const cellWidth = 60;
+        const cellHeight = 30;
+
+        // Créer le tableau
+        for (let row = 0; row < rows; row++) {
+            for (let col = 0; col < cols; col++) {
+                // Créer une cellule
+                const cell = new fabric.Rect({
+                    left: col * cellWidth,
+                    top: row * cellHeight,
+                    width: cellWidth,
+                    height: cellHeight,
+                    fill: 'transparent',
+                    stroke: 'black',
+                    strokeWidth: 1,
+                    selectable: false
+                });
+
+                // Créer le texte de la cellule
+                const cellText = new fabric.Textbox('', {
+                    left: col * cellWidth + 5,
+                    top: row * cellHeight + 5,
+                    fontSize: 12,
+                    width: cellWidth - 10,
+                    height: cellHeight - 10,
+                    selectable: true,
+                    editable: true,
+                    textAlign: 'center'
+                });
+
+                // Ajouter la cellule et le texte au groupe
+                tableGroup.addWithUpdate(cell);
+                tableGroup.addWithUpdate(cellText);
+            }
+        }
+
+        // Ajouter le groupe de tableau au canevas
+        this.canvas.add(tableGroup);
+        this.canvas.setActiveObject(tableGroup);
+        this.canvas.renderAll();
+        this.history.enregistrerEtat();
     }
 }
 
-// Fonction pour arrêter le glissement
-function stopDrag() {
-    isDragging = false;
-    calculatorCanvas.style.cursor = 'default'; // Restaurer le curseur par défaut
+// Module de Gestion du Texte
+class TextModule {
+    constructor(canvas, historyModule) {
+        this.canvas = canvas;
+        this.history = historyModule;
+        this.textPropertiesMenu = document.getElementById('text-properties-menu');
+
+        // Récupérer les contrôles des propriétés de texte
+        this.fontFamilySelect = document.getElementById('font-family');
+        this.fontSizeInput = document.getElementById('font-size');
+        this.fontWeightSelect = document.getElementById('font-weight');
+        this.textColorInput = document.getElementById('text-color');
+
+        // Garder une référence à l'objet texte sélectionné
+        this.selectedText = null;
+    }
+
+    init() {
+        this.setupAddTextButton();
+        this.setupTextSelection();
+        this.setupTextProperties();
+    }
+
+    setupAddTextButton() {
+        const addTextBtn = document.getElementById('add-text-btn');
+        if (addTextBtn) {
+            addTextBtn.addEventListener('click', () => this.addText());
+        } else {
+            console.warn("Le bouton 'Ajouter Texte' avec l'ID 'add-text-btn' est introuvable.");
+        }
+    }
+
+    addText() {
+        const text = new fabric.IText('Entrez votre texte', {
+            left: 150,
+            top: 100,
+            fontSize: 20,
+            fontFamily: 'Arial',
+            fill: '#000000',
+            editable: true,
+            selectable: true
+        });
+        this.canvas.add(text);
+        this.history.enregistrerEtat();
+        this.canvas.setActiveObject(text);
+        this.canvas.renderAll();
+    }
+
+    setupTextSelection() {
+        this.canvas.on('selection:created', (e) => this.handleSelection(e));
+        this.canvas.on('selection:updated', (e) => this.handleSelection(e));
+        this.canvas.on('selection:cleared', () => this.hideTextPropertiesMenu());
+    }
+
+    handleSelection(e) {
+        const selected = e.selected[0];
+        if (selected && selected.type === 'i-text') {
+            this.selectedText = selected;
+            this.showTextPropertiesMenu(selected);
+        } else {
+            this.selectedText = null;
+            this.hideTextPropertiesMenu();
+        }
+    }
+
+    showTextPropertiesMenu(text) {
+        this.textPropertiesMenu.style.display = 'flex';
+        this.updateTextPropertiesMenu(text);
+    }
+
+    hideTextPropertiesMenu() {
+        this.textPropertiesMenu.style.display = 'none';
+    }
+
+    updateTextPropertiesMenu(text) {
+        // Mettre à jour les valeurs des contrôles en fonction des propriétés de l'objet texte sélectionné
+        this.fontFamilySelect.value = text.fontFamily || 'Arial';
+        this.fontSizeInput.value = text.fontSize || 20;
+        this.fontWeightSelect.value = text.fontWeight || 'normal';
+        this.textColorInput.value = text.fill || '#000000';
+    }
+
+    setupTextProperties() {
+        // Attacher les écouteurs d'événements aux contrôles des propriétés de texte
+
+        this.fontFamilySelect.addEventListener('change', () => {
+            if (this.selectedText) {
+                this.selectedText.set('fontFamily', this.fontFamilySelect.value);
+                this.canvas.renderAll();
+                this.history.enregistrerEtat();
+            }
+        });
+
+        this.fontSizeInput.addEventListener('input', () => {
+            if (this.selectedText) {
+                const size = parseInt(this.fontSizeInput.value, 10);
+                if (!isNaN(size)) {
+                    this.selectedText.set('fontSize', size);
+                    this.canvas.renderAll();
+                    this.history.enregistrerEtat();
+                }
+            }
+        });
+
+        this.fontWeightSelect.addEventListener('change', () => {
+            if (this.selectedText) {
+                this.selectedText.set('fontWeight', this.fontWeightSelect.value);
+                this.canvas.renderAll();
+                this.history.enregistrerEtat();
+            }
+        });
+
+        this.textColorInput.addEventListener('input', () => {
+            if (this.selectedText) {
+                this.selectedText.set('fill', this.textColorInput.value);
+                this.canvas.renderAll();
+                this.history.enregistrerEtat();
+            }
+        });
+    }
 }
 
-// Ajouter les écouteurs d'événements pour le glisser-déposer (souris et tactile)
-const calculatorHeader = calculatorCanvas.querySelector('h3');
-calculatorHeader.addEventListener('mousedown', startDrag);
-calculatorHeader.addEventListener('touchstart', startDrag);
+// Module de Gestion de la Calculatrice Intégrée
+class CalculatorModule {
+    constructor() {
+        this.calculatorCanvas = document.getElementById("calculator-canvas");
+        this.canvasCalcDisplay = document.getElementById("canvas-calc-display");
+        this.canvasCalcButtons = document.querySelectorAll("#calculator-canvas .calc-btn");
+        this.closeCanvasCalculatorBtn = document.getElementById("close-canvas-calculator");
+    }
 
-document.addEventListener('mousemove', drag);
-document.addEventListener('touchmove', drag);
-document.addEventListener('mouseup', stopDrag);
-document.addEventListener('touchend', stopDrag);
+    init() {
+        this.setupDrag();
+        this.setupButtons();
+        this.setupVisibility();
+    }
 
-// Afficher et masquer la calculatrice
-showCalculatorBtn.addEventListener("click", () => {
-    calculatorCanvas.style.display = 'block';
-    calculatorCanvas.style.zIndex = 9999;
-});
+    setupDrag() {
+        let isDragging = false;
+        let offsetX, offsetY;
 
-closeCanvasCalculatorBtn.addEventListener("click", () => {
-    calculatorCanvas.style.display = 'none';
-});
+        const getPointerPosition = (e) => {
+            if (e.touches) {
+                return { x: e.touches[0].clientX, y: e.touches[0].clientY };
+            } else {
+                return { x: e.clientX, y: e.clientY };
+            }
+        };
 
-// Gestion des boutons de la calculatrice
-canvasCalcButtons.forEach(button => {
-    button.addEventListener("click", () => {
-        const value = button.textContent;
+        const startDrag = (e) => {
+            isDragging = true;
+            const pointer = getPointerPosition(e);
+            const rect = this.calculatorCanvas.getBoundingClientRect();
+            offsetX = pointer.x - rect.left;
+            offsetY = pointer.y - rect.top;
+            this.calculatorCanvas.style.cursor = 'move';
+            e.preventDefault();
+        };
+
+        const drag = (e) => {
+            if (isDragging) {
+                const pointer = getPointerPosition(e);
+                // Calculer les nouvelles positions en tenant compte des limites de la fenêtre
+                let newLeft = pointer.x - offsetX;
+                let newTop = pointer.y - offsetY;
+
+                // Empêcher la calculatrice de sortir de l'écran
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+                const calcWidth = this.calculatorCanvas.offsetWidth;
+                const calcHeight = this.calculatorCanvas.offsetHeight;
+
+                newLeft = Math.max(0, Math.min(newLeft, windowWidth - calcWidth));
+                newTop = Math.max(0, Math.min(newTop, windowHeight - calcHeight));
+
+                this.calculatorCanvas.style.left = `${newLeft}px`;
+                this.calculatorCanvas.style.top = `${newTop}px`;
+            }
+        };
+
+        const stopDrag = () => {
+            isDragging = false;
+            this.calculatorCanvas.style.cursor = 'default';
+        };
+
+        const calculatorHeader = this.calculatorCanvas.querySelector('h3');
+        if (calculatorHeader) {
+            calculatorHeader.addEventListener('mousedown', startDrag);
+            calculatorHeader.addEventListener('touchstart', startDrag);
+        } else {
+            console.warn("Le titre de la calculatrice est introuvable.");
+        }
+
+        document.addEventListener('mousemove', drag);
+        document.addEventListener('touchmove', drag);
+        document.addEventListener('mouseup', stopDrag);
+        document.addEventListener('touchend', stopDrag);
+    }
+
+    setupButtons() {
+        this.canvasCalcButtons.forEach(button => {
+            button.addEventListener("click", () => this.handleCalcButton(button.textContent));
+        });
+
+        if (this.closeCanvasCalculatorBtn) {
+            this.closeCanvasCalculatorBtn.addEventListener("click", () => this.hideCalculator());
+        } else {
+            console.warn("Le bouton 'Fermer' de la calculatrice est introuvable.");
+        }
+    }
+
+    setupVisibility() {
+        const showCalculatorBtn = document.getElementById("show-calculator");
+        if (showCalculatorBtn) {
+            showCalculatorBtn.addEventListener("click", () => this.showCalculator());
+        } else {
+            console.warn("Le bouton 'Calculatrice' avec l'ID 'show-calculator' est introuvable.");
+        }
+    }
+
+    handleCalcButton(value) {
         if (value === "C") {
-            canvasCalcDisplay.value = "";
+            this.canvasCalcDisplay.value = "";
         } else if (value === "=") {
             try {
-                canvasCalcDisplay.value = eval(canvasCalcDisplay.value);
+                // Utiliser une fonction sécurisée pour évaluer l'expression
+                this.canvasCalcDisplay.value = Function('"use strict";return (' + this.canvasCalcDisplay.value + ')')();
             } catch {
-                canvasCalcDisplay.value = "Erreur";
+                this.canvasCalcDisplay.value = "Erreur";
             }
         } else {
-            canvasCalcDisplay.value += value;
+            this.canvasCalcDisplay.value += value;
         }
-    });
-});
+    }
 
-// =============================
-// 8. Historique (Annuler, Rétablir)
-// =============================
+    showCalculator() {
+        if (this.calculatorCanvas) {
+            this.calculatorCanvas.style.display = 'block';
+            this.calculatorCanvas.style.zIndex = 9999;
+        } else {
+            console.warn("La calculatrice avec l'ID 'calculator-canvas' est introuvable.");
+        }
+    }
 
-let historique = [];
-let pileRétablir = [];
-
-// Fonction pour enregistrer l'état actuel du canevas
-function enregistrerÉtat() {
-    historique.push(JSON.stringify(canvas));
-    pileRétablir = []; // Vider la pile de rétablissement après une nouvelle action
-}
-
-// Fonction pour annuler
-function annuler() {
-    if (historique.length > 0) {
-        const dernierÉtat = historique.pop();
-        pileRétablir.push(JSON.stringify(canvas));
-        canvas.loadFromJSON(dernierÉtat, () => {
-            canvas.renderAll();
-            alert("Action annulée !");
-        });
+    hideCalculator() {
+        if (this.calculatorCanvas) {
+            this.calculatorCanvas.style.display = 'none';
+        }
     }
 }
 
-// Fonction pour rétablir
-function rétablir() {
-    if (pileRétablir.length > 0) {
-        const prochainÉtat = pileRétablir.pop();
-        historique.push(JSON.stringify(canvas));
-        canvas.loadFromJSON(prochainÉtat, () => {
-            canvas.renderAll();
-            alert("Action rétablie !");
+// Module de Gestion de l'Importation et de l'Exportation
+class ImportExportModule {
+    constructor(canvas, historyModule) {
+        this.canvas = canvas;
+        this.history = historyModule;
+        this.nomFichierJSON = null;
+    }
+
+    init() {
+        this.setupSaveImage();
+        this.setupUploadImage();
+        this.setupSaveJSON();
+        this.setupLoadJSON();
+        this.setupDeleteObject();
+        this.setupDeleteMeasurementText();
+    }
+
+    setupSaveImage() {
+        const saveImgBtn = document.querySelector(".save-img");
+        if (saveImgBtn) {
+            saveImgBtn.addEventListener("click", () => this.saveAsImage());
+        } else {
+            console.warn("Le bouton 'Enregistrer en Image' avec la classe 'save-img' est introuvable.");
+        }
+    }
+
+    saveAsImage() {
+        const dataURL = this.canvas.toDataURL({
+            format: 'png',
+            multiplier: 2
         });
+        const link = document.createElement("a");
+        link.href = dataURL;
+        link.download = `canvas_${Date.now()}.png`;
+        link.click();
+    }
+
+    setupUploadImage() {
+        const uploadImageInput = document.getElementById("upload-image");
+        if (uploadImageInput) {
+            uploadImageInput.addEventListener("change", (e) => this.uploadImage(e));
+        } else {
+            console.warn("Le sélecteur d'image avec l'ID 'upload-image' est introuvable.");
+        }
+    }
+
+    uploadImage(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            fabric.Image.fromURL(event.target.result, (img) => {
+                img.set({
+                    left: 150,
+                    top: 100,
+                    scaleX: 0.5,
+                    scaleY: 0.5,
+                    selectable: true,
+                    hasBorders: true,
+                    hasControls: true
+                });
+                this.canvas.add(img);
+                this.canvas.renderAll();
+                this.history.enregistrerEtat();
+            }, { /* crossOrigin: 'anonymous' */ }); // Supprimer si le serveur ne supporte pas CORS
+        };
+        reader.readAsDataURL(file);
+    }
+
+    setupSaveJSON() {
+        const saveJSONBtn = document.getElementById("save-json");
+        if (saveJSONBtn) {
+            saveJSONBtn.addEventListener("click", () => this.saveAsJSON());
+        } else {
+            console.warn("Le bouton 'Enregistrer en JSON' avec l'ID 'save-json' est introuvable.");
+        }
+    }
+
+    saveAsJSON() {
+        const canvasJSON = JSON.stringify(this.canvas.toJSON());
+        const blob = new Blob([canvasJSON], { type: 'application/json' });
+        const link = document.createElement('a');
+        link.href = URL.createObjectURL(blob);
+        link.download = this.nomFichierJSON ? this.nomFichierJSON : `canvas_${Date.now()}.json`;
+        link.click();
+
+        alert(this.nomFichierJSON ? `Modifications enregistrées dans ${this.nomFichierJSON}` : "Nouveau fichier JSON créé !");
+    }
+
+    setupLoadJSON() {
+        const loadJSONInput = document.getElementById("load-json");
+        if (loadJSONInput) {
+            loadJSONInput.addEventListener("change", (e) => this.loadFromJSON(e));
+        } else {
+            console.warn("Le sélecteur de chargement JSON avec l'ID 'load-json' est introuvable.");
+        }
+    }
+
+    loadFromJSON(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        this.nomFichierJSON = file.name;
+
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const json = event.target.result;
+            this.canvas.loadFromJSON(json, () => {
+                this.canvas.renderAll();
+                alert("Le canevas a été chargé avec succès !");
+                this.history.enregistrerEtat();
+            });
+        };
+        reader.readAsText(file);
+    }
+
+    setupDeleteObject() {
+        const deleteObjectBtn = document.getElementById('delete-object');
+        if (deleteObjectBtn) {
+            deleteObjectBtn.addEventListener("click", () => this.deleteSelectedObject());
+        } else {
+            console.warn("Le bouton 'Supprimer l'objet' avec l'ID 'delete-object' est introuvable.");
+        }
+    }
+
+    deleteSelectedObject() {
+        const activeObject = this.canvas.getActiveObject();
+        if (activeObject) {
+            // Supprimer le texte de mesure associé si présent
+            const associatedText = activeObject.measurementText || activeObject.rulerText;
+            if (associatedText) {
+                this.canvas.remove(associatedText);
+            }
+            this.canvas.remove(activeObject);
+            this.canvas.renderAll();
+            this.history.enregistrerEtat();
+        } else {
+            alert("Aucun objet sélectionné !");
+        }
+    }
+
+    setupDeleteMeasurementText() {
+        const deleteMeasurementBtn = document.getElementById('delete-measurement-text');
+        if (deleteMeasurementBtn) {
+            deleteMeasurementBtn.addEventListener("click", () => this.deleteMeasurementText());
+        } else {
+            console.warn("Le bouton 'Supprimer le texte de mesure' avec l'ID 'delete-measurement-text' est introuvable.");
+        }
+    }
+
+    deleteMeasurementText() {
+        const activeObject = this.canvas.getActiveObject();
+        if (activeObject) {
+            const associatedText = activeObject.measurementText || activeObject.rulerText;
+            if (associatedText) {
+                this.canvas.remove(associatedText);
+                if (activeObject.measurementText) {
+                    activeObject.measurementTextActive = false;
+                    delete activeObject.measurementText;
+                }
+                if (activeObject.rulerText) {
+                    delete activeObject.rulerText;
+                }
+                this.canvas.renderAll();
+                this.history.enregistrerEtat();
+            } else {
+                alert("Aucun texte de mesure associé à cet objet !");
+            }
+        } else {
+            alert("Aucun objet sélectionné !");
+        }
     }
 }
 
-// Enregistrer l'état à chaque ajout ou suppression d'objet
-canvas.on('object:added', enregistrerÉtat);
-canvas.on('object:removed', enregistrerÉtat);
+// Module de Gestion de l'Aperçu Avant Impression
+class PrintPreviewModule {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.printPreviewBtn = document.getElementById('print-preview-btn');
+        this.printPreviewModal = document.getElementById('print-preview-modal');
 
-// Ajouter les événements pour les boutons "Annuler" et "Rétablir"
-document.getElementById('annuler-btn').addEventListener('click', annuler);
-document.getElementById('rétablir-btn').addEventListener('click', rétablir);
+        // Vérifiez si les éléments existent
+        if (this.printPreviewModal) {
+            this.closeModalSpan = this.printPreviewModal.querySelector('.close-modal');
+            this.previewImage = document.getElementById('preview-image');
+            this.printBtn = document.getElementById('print-btn');
+        }
+    }
 
-// =============================
-// 9. Enregistrement et Chargement JSON
-// =============================
+    init() {
+        if (!this.printPreviewBtn || !this.printPreviewModal) {
+            console.warn("Les éléments nécessaires pour l'aperçu avant impression sont manquants.");
+            return;
+        }
+        this.setupPrintPreview();
+        this.setupModalClose();
+        this.setupPrint();
+    }
 
-// Fonction pour enregistrer le canevas sous forme de JSON
-function enregistrerCanevasJSON() {
-    const canvasJSON = JSON.stringify(canvas.toJSON());
-    const blob = new Blob([canvasJSON], { type: 'application/json' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = nomFichierJSON ? nomFichierJSON : `canvas_${Date.now()}.json`; // Utiliser le nom du fichier chargé ou générer un nouveau nom
-    link.click();
+    setupPrintPreview() {
+        this.printPreviewBtn.addEventListener('click', () => this.showPreview());
+    }
 
-    alert(nomFichierJSON ? `Modifications enregistrées dans ${nomFichierJSON}` : "Nouveau fichier JSON créé !");
-}
-
-// Ajouter un événement pour le bouton "Enregistrer sous forme de JSON"
-document.getElementById("save-json").addEventListener("click", enregistrerCanevasJSON);
-
-// Fonction pour charger un fichier JSON et restaurer l'état du canevas
-function chargerCanevasJSON(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    nomFichierJSON = file.name; // Enregistrer le nom du fichier JSON chargé
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const json = e.target.result;
-        canvas.loadFromJSON(json, () => {
-            canvas.renderAll();
-            alert("Le canevas a été chargé avec succès !");
+    showPreview() {
+        const dataURL = this.canvas.toDataURL({
+            format: 'png',
+            multiplier: 2
         });
-    };
-    reader.readAsText(file);
+        if (this.previewImage) {
+            this.previewImage.src = dataURL;
+            this.printPreviewModal.style.display = 'block';
+        }
+    }
+
+    setupModalClose() {
+        if (this.closeModalSpan) {
+            this.closeModalSpan.addEventListener('click', () => this.hidePreview());
+        }
+        window.addEventListener('click', (event) => {
+            if (event.target === this.printPreviewModal) {
+                this.hidePreview();
+            }
+        });
+    }
+
+    hidePreview() {
+        if (this.printPreviewModal) {
+            this.printPreviewModal.style.display = 'none';
+        }
+    }
+
+    setupPrint() {
+        if (this.printBtn) {
+            this.printBtn.addEventListener('click', () => this.printCanvas());
+        }
+    }
+
+    printCanvas() {
+        if (!this.previewImage) return;
+        const printWindow = window.open('', 'PrintWindow', 'width=800,height=600');
+        printWindow.document.write('<html><head><title>Aperçu Avant Impression</title>');
+        printWindow.document.write('<style>body { display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }</style>');
+        printWindow.document.write('</head><body>');
+        printWindow.document.write(`<img src="${this.previewImage.src}" alt="Aperçu du Canevas" style="max-width: 100%; height: auto;">`);
+        printWindow.document.write('</body></html>');
+        printWindow.document.close();
+        printWindow.focus();
+        printWindow.print();
+        printWindow.close();
+    }
 }
 
-// Ajouter un événement pour le chargement du fichier JSON
-document.getElementById("load-json").addEventListener("change", chargerCanevasJSON);
+// Module de Gestion de la Duplication d'Objets
+class DuplicateModule {
+    constructor(canvas, historyModule) {
+        this.canvas = canvas;
+        this.history = historyModule;
+        this.duplicateBtn = this.createDuplicateButton();
+    }
 
-// =============================
-// 10. Fonctionnalités de Sauvegarde et Importation d'Images
-// =============================
+    init() {
+        this.setupEvents();
+    }
 
-// Sauvegarder le dessin en tant qu'image
-document.querySelector(".save-img").addEventListener("click", () => {
-    const dataURL = canvas.toDataURL({
-        format: 'png',
-        multiplier: 2
-    });
-    const link = document.createElement("a");
-    link.href = dataURL;
-    link.download = `canvas_${Date.now()}.png`;
-    link.click();
-});
+    createDuplicateButton() {
+        const btn = document.createElement('button');
+        btn.innerHTML = '+';
+        btn.classList.add('duplicate-btn');
+        document.body.appendChild(btn);
+        btn.style.display = 'none';
+        btn.style.position = 'absolute';
+        btn.style.transform = 'translate(-50%, -50%)';
+        btn.style.padding = '5px 10px';
+        btn.style.borderRadius = '50%';
+        btn.style.backgroundColor = '#4A98F7';
+        btn.style.color = '#fff';
+        btn.style.border = 'none';
+        btn.style.cursor = 'pointer';
+        btn.style.zIndex = 1000;
+        return btn;
+    }
 
-// Importer une image sur le canevas
-document.getElementById("upload-image").addEventListener("change", (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
+    setupEvents() {
+        this.duplicateBtn.addEventListener('click', () => this.duplicateObject());
+        this.canvas.on('selection:created', () => this.showDuplicateButton());
+        this.canvas.on('selection:updated', () => this.showDuplicateButton());
+        this.canvas.on('selection:cleared', () => this.hideDuplicateButton());
 
-    const reader = new FileReader();
-    reader.onload = (event) => {
-        fabric.Image.fromURL(event.target.result, (img) => {
+        // Suppression via touche "Delete"
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Delete') {
+                this.deleteSelectedObject();
+            }
+        });
+    }
+
+    showDuplicateButton() {
+        const activeObject = this.canvas.getActiveObject();
+        if (activeObject) {
+            // Obtenir la position absolue de l'objet sur le canevas
+            const canvasRect = this.canvas.upperCanvasEl.getBoundingClientRect();
+            const objLeft = activeObject.left * this.canvas.getZoom() + canvasRect.left;
+            const objTop = activeObject.top * this.canvas.getZoom() + canvasRect.top;
+
+            // Positionner le bouton de duplication au centre supérieur de l'objet
+            this.duplicateBtn.style.left = `${objLeft + activeObject.getScaledWidth() / 2}px`;
+            this.duplicateBtn.style.top = `${objTop}px`;
+            this.duplicateBtn.style.display = 'block';
+        }
+    }
+
+    hideDuplicateButton() {
+        this.duplicateBtn.style.display = 'none';
+    }
+
+    duplicateObject() {
+        const activeObject = this.canvas.getActiveObject();
+        if (activeObject) {
+            activeObject.clone((clonedObj) => {
+                clonedObj.set({
+                    left: activeObject.left + 30,
+                    top: activeObject.top + 30,
+                    evented: true
+                });
+                this.canvas.add(clonedObj);
+                this.canvas.setActiveObject(clonedObj);
+                if (clonedObj.type !== 'group') {
+                    // Ajouter les mesures si nécessaire
+                    if (clonedObj.measurementText) {
+                        clonedObj.measurementText.clone((clonedText) => {
+                            clonedText.set({
+                                left: clonedObj.left,
+                                top: clonedObj.top - 20
+                            });
+                            this.canvas.add(clonedText);
+                            clonedObj.measurementText = clonedText;
+                        });
+                    }
+                } else {
+                    // Pour les règles et les groupes (comme les tableaux)
+                    clonedObj.getObjects().forEach(obj => {
+                        if (obj.rulerText) {
+                            obj.rulerText.clone((clonedRulerText) => {
+                                clonedRulerText.set({
+                                    left: clonedObj.left + obj.left + obj.getScaledWidth() / 2,
+                                    top: clonedObj.top + obj.top - 20
+                                });
+                                this.canvas.add(clonedRulerText);
+                                obj.rulerText = clonedRulerText;
+                            });
+                        }
+                        if (obj.measurementText) {
+                            obj.measurementText.clone((clonedText) => {
+                                clonedText.set({
+                                    left: clonedObj.left + obj.left,
+                                    top: clonedObj.top + obj.top - 20
+                                });
+                                this.canvas.add(clonedText);
+                                obj.measurementText = clonedText;
+                            });
+                        }
+                    });
+                }
+                this.canvas.renderAll();
+                this.history.enregistrerEtat();
+            });
+        }
+        this.hideDuplicateButton();
+    }
+
+    deleteSelectedObject() {
+        const activeObject = this.canvas.getActiveObject();
+        if (activeObject) {
+            const associatedText = activeObject.measurementText || activeObject.rulerText;
+            if (associatedText) {
+                this.canvas.remove(associatedText);
+            }
+            this.canvas.remove(activeObject);
+            this.canvas.renderAll();
+            this.history.enregistrerEtat();
+        }
+    }
+}
+
+// Module de Gestion de la Palette de Photos
+class PhotoPaletteModule {
+    constructor(canvas, historyModule) {
+        this.canvas = canvas;
+        this.history = historyModule;
+        this.photoPaletteModal = document.getElementById('photo-palette-modal');
+        this.openPaletteBtn = document.getElementById('open-photo-palette-btn');
+        this.closePaletteSpan = this.photoPaletteModal ? this.photoPaletteModal.querySelector('.close-modal') : null;
+        this.photoGallery = document.getElementById('photo-gallery');
+        this.photoSearchInput = document.getElementById('photo-search');
+        this.photos = []; // Tableau pour stocker les photos chargées
+    }
+
+    init() {
+        this.setupOpenPalette();
+        this.setupClosePalette();
+        this.loadPhotos();
+        this.setupSearch();
+    }
+
+    setupOpenPalette() {
+        if (this.openPaletteBtn) {
+            this.openPaletteBtn.addEventListener('click', () => {
+                this.photoPaletteModal.style.display = 'block';
+            });
+        } else {
+            console.warn("Le bouton 'Ouvrir la Palette de Photos' avec l'ID 'open-photo-palette-btn' est introuvable.");
+        }
+    }
+
+    setupClosePalette() {
+        if (this.closePaletteSpan) {
+            this.closePaletteSpan.addEventListener('click', () => {
+                this.photoPaletteModal.style.display = 'none';
+            });
+        } else {
+            console.warn("Le bouton de fermeture de la palette de photos est introuvable.");
+        }
+
+        window.addEventListener('click', (event) => {
+            if (event.target === this.photoPaletteModal) {
+                this.photoPaletteModal.style.display = 'none';
+            }
+        });
+    }
+
+    async loadPhotos() {
+        try {
+            const response = await fetch('merged.json'); // Assurez-vous que ce fichier existe et est correctement structuré
+            if (!response.ok) {
+                throw new Error('Erreur lors du chargement du fichier JSON');
+            }
+            const data = await response.json();
+            this.photos = data; // Votre JSON doit être un tableau d'objets avec au moins la propriété 'src'
+            this.displayPhotos(this.photos);
+        } catch (error) {
+            console.error('Erreur:', error);
+            alert('Impossible de charger la palette de photos.');
+        }
+    }
+
+    displayPhotos(photos) {
+        if (!this.photoGallery) {
+            console.warn("La galerie de photos avec l'ID 'photo-gallery' est introuvable.");
+            return;
+        }
+        this.photoGallery.innerHTML = ''; // Vider la galerie avant d'afficher les nouvelles photos
+        photos.forEach(photo => {
+            const img = document.createElement('img');
+            img.src = photo.src; // Utiliser 'src' comme dans votre JSON
+            img.alt = photo.alt || 'Photo';
+            img.title = photo.alt || 'Photo';
+            img.style.width = '100px'; // Ajuster selon vos besoins
+            img.style.height = 'auto';
+            img.style.margin = '5px';
+            img.style.cursor = 'pointer';
+            img.addEventListener('click', () => this.addPhotoToCanvas(photo.src));
+            this.photoGallery.appendChild(img);
+        });
+    }
+
+    addPhotoToCanvas(src) {
+        fabric.Image.fromURL(src, (img) => {
             img.set({
-                left: 150,
+                left: 100,
                 top: 100,
                 scaleX: 0.5,
                 scaleY: 0.5,
@@ -713,209 +1285,27 @@ document.getElementById("upload-image").addEventListener("change", (e) => {
                 hasBorders: true,
                 hasControls: true
             });
-
-            canvas.add(img);
-            canvas.renderAll();
+            this.canvas.add(img);
+            this.canvas.renderAll();
+            this.history.enregistrerEtat();
+            this.photoPaletteModal.style.display = 'none'; // Fermer la palette après l'ajout
+        }, {
+            // crossOrigin: 'anonymous', // Supprimer si le serveur ne supporte pas CORS
         });
-    };
-    reader.readAsDataURL(file);
-});
-
-// =============================
-// 11. Suppression via la touche "Delete"
-// =============================
-
-// Fonction pour supprimer un objet sélectionné
-function supprimerObjet() {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-        // Supprimer le texte de mesure associé si présent
-        const associatedText = activeObject.measurementText || activeObject.rulerText;
-        if (associatedText) {
-            canvas.remove(associatedText);
-        }
-        canvas.remove(activeObject);
-        canvas.renderAll();
     }
-}
 
-// Suppression via la touche "Delete"
-document.addEventListener('keydown', (event) => {
-    if (event.key === 'Delete') {
-        supprimerObjet();
-    }
-});
-
-// =============================
-// 12. Calculatrice Déplaçable (Support Tactile)
-// =============================
-
-// Variables pour le glisser-déposer de la calculatrice
-let isCalculatorDragging = false;
-let calculatorOffsetX, calculatorOffsetY;
-
-// Fonction pour commencer le glissement de la calculatrice
-function startCalculatorDrag(e) {
-    isCalculatorDragging = true;
-    const pointer = getPointerPosition(e);
-    calculatorOffsetX = pointer.x - calculatorCanvas.offsetLeft;
-    calculatorOffsetY = pointer.y - calculatorCanvas.offsetTop;
-    calculatorCanvas.style.cursor = 'move';
-    e.preventDefault();
-}
-
-// Fonction pour déplacer la calculatrice
-function dragCalculator(e) {
-    if (isCalculatorDragging) {
-        const pointer = getPointerPosition(e);
-        calculatorCanvas.style.left = `${pointer.x - calculatorOffsetX}px`;
-        calculatorCanvas.style.top = `${pointer.y - calculatorOffsetY}px`;
-    }
-}
-
-// Fonction pour arrêter le glissement de la calculatrice
-function stopCalculatorDrag() {
-    isCalculatorDragging = false;
-    calculatorCanvas.style.cursor = 'default';
-}
-
-// Ajouter les écouteurs d'événements pour le glisser-déposer de la calculatrice (souris et tactile)
-calculatorHeader.addEventListener('mousedown', startCalculatorDrag);
-calculatorHeader.addEventListener('touchstart', startCalculatorDrag);
-
-document.addEventListener('mousemove', dragCalculator);
-document.addEventListener('touchmove', dragCalculator);
-document.addEventListener('mouseup', stopCalculatorDrag);
-document.addEventListener('touchend', stopCalculatorDrag);
-
-// =============================
-// 13. Suppression du Texte de Mesure sans Supprimer l'Objet
-// =============================
-
-// Fonction pour supprimer uniquement le texte de mesure associé à l'objet sélectionné
-function supprimerTexteDeMesure() {
-    const activeObject = canvas.getActiveObject();
-    if (activeObject) {
-        const associatedText = activeObject.measurementText || activeObject.rulerText;
-        if (associatedText) {
-            canvas.remove(associatedText);
-            if (activeObject.measurementText) {
-                activeObject.measurementTextActive = false; // Désactiver l'indicateur pour empêcher la recréation du texte
-                delete activeObject.measurementText; // Supprimer la référence au texte de mesure
-            }
-            if (activeObject.rulerText) {
-                delete activeObject.rulerText; // Supprimer la référence au texte de la règle
-            }
-            canvas.renderAll();
+    setupSearch() {
+        if (this.photoSearchInput) {
+            this.photoSearchInput.addEventListener('input', (e) => {
+                const query = e.target.value.toLowerCase();
+                const filteredPhotos = this.photos.filter(photo => {
+                    const altText = (photo.alt || '').toLowerCase();
+                    return altText.includes(query);
+                });
+                this.displayPhotos(filteredPhotos);
+            });
         } else {
-            alert("Aucun texte de mesure associé à cet objet !");
+            console.warn("Le champ de recherche de photos avec l'ID 'photo-search' est introuvable.");
         }
-    } else {
-        alert("Aucun objet sélectionné !");
     }
 }
-
-// =============================
-// 14. Sauvegarde et Chargement JSON avec Mise à Jour
-// =============================
-
-// Fonction pour enregistrer le canevas sous forme de JSON avec mise à jour du même fichier
-function enregistrerCanevasJSON() {
-    const canvasJSON = JSON.stringify(canvas.toJSON());
-    const blob = new Blob([canvasJSON], { type: 'application/json' });
-
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = nomFichierJSON ? nomFichierJSON : `canvas_${Date.now()}.json`; // Utiliser le nom du fichier chargé ou générer un nouveau nom
-    link.click();
-
-    alert(nomFichierJSON ? `Modifications enregistrées dans ${nomFichierJSON}` : "Nouveau fichier JSON créé !");
-}
-
-// Fonction pour charger un fichier JSON et restaurer l'état du canevas
-function chargerCanevasJSON(event) {
-    const file = event.target.files[0];
-    if (!file) return;
-
-    nomFichierJSON = file.name; // Enregistrer le nom du fichier JSON chargé
-
-    const reader = new FileReader();
-    reader.onload = (e) => {
-        const json = e.target.result;
-        canvas.loadFromJSON(json, () => {
-            canvas.renderAll();
-            alert("Le canevas a été chargé avec succès !");
-        });
-    };
-    reader.readAsText(file);
-}
-
-// =============================
-// 15. Initialisation des Événements
-// =============================
-
-// Événements pour les boutons "Annuler" et "Rétablir" sont déjà ajoutés dans la section Historique
-
-// Événements pour les boutons "Enregistrer" et "Charger" sont déjà ajoutés dans la section Enregistrement JSON
-
-// Événements pour les outils de dessin et de manipulation sont déjà ajoutés dans les sections respectives
-
-// =============================
-// Fin du Code Organisé
-// =============================
-
-
-// =============================
-// Gestion des Pages de Travail (Similaire à Excel)
-// =============================
-
-// =============================
-// 16. Fonctionnalité d'Aperçu Avant Impression
-// =============================
-
-// Références aux éléments modaux
-const printPreviewBtn = document.getElementById('print-preview-btn');
-const printPreviewModal = document.getElementById('print-preview-modal');
-const closeModalSpan = document.querySelector('.close-modal');
-const previewImage = document.getElementById('preview-image');
-const printBtn = document.getElementById('print-btn');
-
-// Ouvrir la fenêtre modale et afficher l'aperçu du canevas
-printPreviewBtn.addEventListener('click', () => {
-    // Générer l'image du canevas
-    const dataURL = canvas.toDataURL({
-        format: 'png',
-        multiplier: 2
-    });
-    previewImage.src = dataURL;
-    
-    // Afficher la modale
-    printPreviewModal.style.display = 'block';
-});
-
-// Fermer la fenêtre modale lorsqu'on clique sur la croix
-closeModalSpan.addEventListener('click', () => {
-    printPreviewModal.style.display = 'none';
-});
-
-// Fermer la fenêtre modale lorsqu'on clique en dehors de la modale
-window.addEventListener('click', (event) => {
-    if (event.target === printPreviewModal) {
-        printPreviewModal.style.display = 'none';
-    }
-});
-
-// Fonction pour imprimer l'image du canevas
-printBtn.addEventListener('click', () => {
-    const printWindow = window.open('', 'PrintWindow', 'width=800,height=600');
-    printWindow.document.write('<html><head><title>Aperçu Avant Impression</title>');
-    printWindow.document.write('<style>body { display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }</style>');
-    printWindow.document.write('</head><body>');
-    printWindow.document.write(`<img src="${previewImage.src}" alt="Aperçu du Canevas" style="max-width: 100%; height: auto;">`);
-    printWindow.document.write('</body></html>');
-    printWindow.document.close();
-    printWindow.focus();
-    printWindow.print();
-    printWindow.close();
-});
-

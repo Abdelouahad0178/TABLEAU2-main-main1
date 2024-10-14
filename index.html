@@ -31,8 +31,24 @@
                         <span>Triangle</span>
                     </li>
                 </ul>
-            </div>
 
+
+                <div class="fill-options">
+                    <label>
+                        <input type="radio" name="shape-fill" value="filled" checked> Plein
+                    </label>
+                    <label>
+                        <input type="radio" name="shape-fill" value="hollow"> Vide
+                    </label>
+                </div>
+
+
+
+
+
+
+            </div>
+            
             <!-- Sélecteur de couleur pour les formes -->
             <div class="row">
                 <label class="title">Couleur de la forme :</label>
@@ -62,6 +78,22 @@
                     </li>
                 </ul>
             </div>
+            
+<!-- Fenêtre d'Aperçu Avant Impression -->
+<div id="print-preview-modal" class="modal" style="display: none;">
+    <div class="modal-content">
+        <span class="close-modal">&times;</span>
+        <button class="propre">Aperçu Avant Impression</button>
+        <img id="preview-image" src="" alt="Aperçu du Canevas">
+        <button id="print-btn">Imprimer</button>
+    </div>
+</div>
+
+
+
+
+
+
 
             <!-- Palette de couleurs -->
             <div class="row colors">
@@ -77,6 +109,18 @@
                 </ul>
             </div>
 
+
+            
+
+
+
+
+
+
+
+
+
+
             <!-- Importer une image -->
             <div class="row">
                 <label class="title">Importer une image</label>
@@ -85,8 +129,8 @@
 
             <!-- Ajouter du texte -->
             <div class="row">
-                <label class="title">   Ajouter du texte</label>
-                <button id="add-text-btn"> Ajouter Texte</button>
+                <label class="title">Ajouter du texte</label>
+                <button id="add-text-btn">Ajouter Texte</button>
             </div>
 
             <!-- Boutons d'action -->
@@ -123,6 +167,28 @@
             <div class="row buttons">
                 <button id="annuler-btn">Annuler</button>
                 <button id="rétablir-btn">Rétablir</button>
+            </div>
+
+            <!-- Bouton pour Aperçu Avant Impression -->
+            <div class="row buttons">
+                <button id="print-preview-btn">Aperçu Avant Impression</button>
+            </div>
+
+            <!-- Palette de Photos -->
+            <div class="row buttons">
+                <button id="open-photo-palette-btn">Ouvrir la Palette de Photos</button>
+            </div>
+
+            <!-- Fenêtre Palette de Photos -->
+            <div id="photo-palette-modal" class="modal" style="display: none;">
+                <div class="modal-content">
+                    <span class="close-modal">&times;</span>
+                    <h2>Palette de Photos</h2>
+                    <input type="text" id="photo-search" placeholder="Rechercher des photos..." />
+                    <div id="photo-gallery" class="photo-gallery">
+                        <!-- Les photos seront chargées ici dynamiquement -->
+                    </div>
+                </div>
             </div>
         </section>
 
@@ -179,26 +245,5 @@
         <label for="text-color">Couleur :</label>
         <input type="color" id="text-color" value="#000000">
     </div>
-
-
-<!-- Ajouter ce bouton dans la section .tools-board, par exemple après le bouton "Enregistrer sous forme de JSON" -->
-<div class="row buttons">
-    <button id="print-preview-btn">Aperçu Avant Impression</button>
-</div>
-
-<!-- Ajouter ceci juste avant la fermeture de la balise </body> -->
-<div id="print-preview-modal" class="modal" style="display: none;">
-    <div class="modal-content">
-        <span class="close-modal">&times;</span>
-        <h2>Aperçu Avant Impression</h2>
-        <img id="preview-image" src="" alt="Aperçu du Canevas">
-        <button id="print-btn">Imprimer</button>
-    </div>
-</div>
-
-
-
-
-
 </body>
 </html>
