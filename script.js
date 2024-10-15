@@ -1,156 +1,57 @@
-document.addEventListener('DOMContentLoaded', () => {
-    const canvas = new fabric.Canvas('canvas', {
-        isDrawingMode: false,
-        backgroundColor: 'white',
-        width: 1130,
-        height: 1440
-    });
+// script.js
 
-    // Initialiser les modules
-    const app = new App(canvas);
-    app.init();
-});
-
-// Module Principal
-class App {
-    constructor(canvas) {
-        this.canvas = canvas;
-        this.history = new HistoryModule(this.canvas);
-        this.color = new ColorModule(this.canvas);
-        this.brush = new BrushModule(this.canvas, this.color);
-        this.shapes = new ShapesModule(this.canvas, this.color, this.history);
-        this.text = new TextModule(this.canvas, this.history);
-        this.calculator = new CalculatorModule();
-        this.importExport = new ImportExportModule(this.canvas, this.history);
-        this.printPreview = new PrintPreviewModule(this.canvas); // Module d'Aperçu Avant Impression
-        this.duplicate = new DuplicateModule(this.canvas, this.history);
-        this.photoPalette = new PhotoPaletteModule(this.canvas, this.history);
-    }
-
-    init() {
-        this.history.init();
-        this.color.init();
-        this.brush.init();
-        this.shapes.init();
-        this.text.init();
-        this.calculator.init();
-        this.importExport.init();
-        this.printPreview.init(); // Initialiser le module d'Aperçu Avant Impression
-        this.duplicate.init();
-        this.photoPalette.init();
-    }
-}
-
-// Module de Gestion de l'Historique (Annuler/Rétablir)
+// Module de Gestion de l'Historique
 class HistoryModule {
     constructor(canvas) {
         this.canvas = canvas;
-        this.historique = [];
-        this.pileRetablir = [];
-    }
-
-    init() {
-        // Enregistrer l'état initial
-        this.enregistrerEtat();
-
-        this.canvas.on('object:added', () => this.enregistrerEtat());
-        this.canvas.on('object:removed', () => this.enregistrerEtat());
-        this.canvas.on('object:modified', () => this.enregistrerEtat());
-
-        const annulerBtn = document.getElementById('annuler-btn');
-        const retablirBtn = document.getElementById('rétablir-btn');
-
-        if (annulerBtn) {
-            annulerBtn.addEventListener('click', () => this.annuler());
-        } else {
-            console.warn("Le bouton 'Annuler' avec l'ID 'annuler-btn' est introuvable.");
-        }
-
-        if (retablirBtn) {
-            retablirBtn.addEventListener('click', () => this.retablir());
-        } else {
-            console.warn("Le bouton 'Rétablir' avec l'ID 'rétablir-btn' est introuvable.");
-        }
+        this.history = [];
+        this.currentIndex = -1;
     }
 
     enregistrerEtat() {
+        // Supprimer les états futurs si on enregistre un nouvel état
+        this.history = this.history.slice(0, this.currentIndex + 1);
         // Enregistrer l'état actuel du canevas
-        const etat = JSON.stringify(this.canvas.toJSON());
-        this.historique.push(etat);
-        // Limiter la taille de l'historique si nécessaire
-        if (this.historique.length > 50) {
-            this.historique.shift();
-        }
-        // Vider la pile de rétablissement
-        this.pileRetablir = [];
+        this.history.push(JSON.stringify(this.canvas));
+        this.currentIndex++;
     }
 
     annuler() {
-        if (this.historique.length > 1) { // Garder au moins un état
-            const dernierEtat = this.historique.pop();
-            this.pileRetablir.push(dernierEtat);
-            const etatPrecedent = this.historique[this.historique.length - 1];
-            this.canvas.loadFromJSON(etatPrecedent, () => {
+        if (this.currentIndex > 0) {
+            this.currentIndex--;
+            this.canvas.loadFromJSON(this.history[this.currentIndex], () => {
                 this.canvas.renderAll();
-                alert("Action annulée !");
             });
-        } else {
-            alert("Aucune action à annuler !");
         }
     }
 
     retablir() {
-        if (this.pileRetablir.length > 0) {
-            const prochainEtat = this.pileRetablir.pop();
-            this.historique.push(prochainEtat);
-            this.canvas.loadFromJSON(prochainEtat, () => {
+        if (this.currentIndex < this.history.length - 1) {
+            this.currentIndex++;
+            this.canvas.loadFromJSON(this.history[this.currentIndex], () => {
                 this.canvas.renderAll();
-                alert("Action rétablie !");
             });
-        } else {
-            alert("Aucune action à rétablir !");
         }
     }
 }
 
 // Module de Gestion des Couleurs
 class ColorModule {
-    constructor(canvas) {
-        this.canvas = canvas;
+    constructor() {
         this.selectedColorBtn = null;
-        this.selectedShapeColor = '#000000'; // Valeur par défaut pour la couleur des formes
+        this.selectedShapeColor = "#000000"; // Valeur par défaut
     }
 
     init() {
-        this.setupColorOptions();
         this.setupCustomColorPicker();
         this.setupShapeColorPicker();
-    }
-
-    setupColorOptions() {
-        const colorOptions = document.querySelectorAll(".colors .option");
-        colorOptions.forEach(btn => {
-            btn.addEventListener('click', () => {
-                if (btn.querySelector('input[type="color"]')) {
-                    // Si c'est le sélecteur de couleur personnalisé
-                    return;
-                }
-
-                if (this.selectedColorBtn) {
-                    this.selectedColorBtn.classList.remove("selected");
-                }
-                btn.classList.add("selected");
-                this.selectedColorBtn = btn;
-                this.canvas.freeDrawingBrush.color = this.getBrushColor();
-            });
-        });
+        this.setupColorSelection();
     }
 
     setupCustomColorPicker() {
-        const customColorPicker = document.querySelector("#color-picker");
+        const customColorPicker = document.getElementById('color-picker');
         if (customColorPicker) {
-            customColorPicker.addEventListener("change", (e) => {
-                this.canvas.freeDrawingBrush.color = e.target.value;
+            customColorPicker.addEventListener('change', (e) => {
                 if (this.selectedColorBtn) {
                     this.selectedColorBtn.classList.remove("selected");
                 }
@@ -171,6 +72,19 @@ class ColorModule {
         } else {
             console.warn("Le sélecteur de couleur des formes avec l'ID 'shape-color-picker' est introuvable.");
         }
+    }
+
+    setupColorSelection() {
+        const colorOptions = document.querySelectorAll('.colors .option:not(:last-child)');
+        colorOptions.forEach(option => {
+            option.addEventListener('click', () => {
+                if (this.selectedColorBtn) {
+                    this.selectedColorBtn.classList.remove("selected");
+                }
+                option.classList.add("selected");
+                this.selectedColorBtn = option;
+            });
+        });
     }
 
     getBrushColor() {
@@ -357,10 +271,11 @@ class ShapesModule {
         }
     }
 
+    // Méthode modifiée pour ajouter une règle dynamique
     addRulerShape() {
         const rulerColor = this.colorModule.getShapeColor(); // Utiliser la couleur sélectionnée pour la règle
-        const ruler = new fabric.Line([100, 100, 400, 100], {
-            stroke: rulerColor, // Défini le contour avec la couleur sélectionnée
+        const ruler = new fabric.Line([0, 0, 300, 0], { // Ligne de 300 pixels de long
+            stroke: rulerColor,
             strokeWidth: 3,
             selectable: true,
             hasBorders: true,
@@ -369,31 +284,44 @@ class ShapesModule {
             originY: 'center'
         });
 
-        const rulerText = new fabric.Text('0 dm', {
+        const rulerText = new fabric.Text('0 cm', {
             fontSize: 14,
             fill: 'black',
-            selectable: false,
+            selectable: false, // Empêcher la sélection du texte
+            evented: false, // Empêcher les interactions avec le texte
             originX: 'center',
-            originY: 'center'
+            originY: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.7)', // Fond blanc semi-transparent
+            stroke: 'black',
+            strokeWidth: 0.5,
+            lockRotation: true, // Verrouiller la rotation du texte
+            lockScalingX: true, // Verrouiller le redimensionnement en X
+            lockScalingY: true, // Verrouiller le redimensionnement en Y
+            lockMovementX: true, // Verrouiller le mouvement en X
+            lockMovementY: true  // Verrouiller le mouvement en Y
         });
 
         // Grouper la ligne et le texte pour un déplacement fluide
         const rulerGroup = new fabric.Group([ruler, rulerText], {
-            left: 150,
-            top: 100,
+            left: 10,
+            top: 10,
             selectable: true,
             hasBorders: true,
-            hasControls: true
+            hasControls: true,
+            lockScalingFlip: true // Éviter les retournements involontaires
         });
 
         this.canvas.add(rulerGroup);
         this.history.enregistrerEtat();
-        this.updateRulerShapeLength(rulerGroup, rulerText);
+        this.updateRulerShapeLength(rulerGroup, rulerText); // Mise à jour initiale de la longueur
 
-        rulerGroup.on('modified', () => this.updateRulerShapeLength(rulerGroup, rulerText));
-        rulerGroup.on('moving', () => this.updateRulerShapeLength(rulerGroup, rulerText));
+        // Attacher les événements pour mettre à jour le texte dynamiquement
         rulerGroup.on('scaling', () => this.updateRulerShapeLength(rulerGroup, rulerText));
+        rulerGroup.on('moving', () => this.updateRulerShapeLength(rulerGroup, rulerText));
+        rulerGroup.on('rotating', () => this.updateRulerShapeLength(rulerGroup, rulerText));
+        rulerGroup.on('modified', () => this.updateRulerShapeLength(rulerGroup, rulerText)); // Pour tout autre type de modification
 
+        // Supprimer le texte lorsque la règle est retirée
         rulerGroup.on('removed', () => {
             this.canvas.remove(rulerText);
         });
@@ -401,28 +329,74 @@ class ShapesModule {
         rulerGroup.rulerText = rulerText;
     }
 
+    // Mise à jour dynamique de la longueur de la règle avec le texte juste au-dessus
     updateRulerShapeLength(rulerGroup, rulerText) {
-        const ruler = rulerGroup.item(0); // La ligne
-        const lengthInCm = ruler.getScaledWidth() / this.pixelsPerCm;
-        if (lengthInCm >= 100) {
-            const lengthInMeters = (lengthInCm / 100).toFixed(2);
-            rulerText.set({ text: `${lengthInMeters} m` });
-        } else {
-            rulerText.set({ text: `${lengthInCm.toFixed(2)} dm` });
-        }
+        let ruler = null;
 
-        // Positionner le texte au milieu de la règle
-        rulerText.set({
-            left: ruler.left + ruler.getScaledWidth() / 2,
-            top: ruler.top - 20,
-            originX: 'center',
-            originY: 'center',
-            angle: ruler.angle
+        // Identifier la ligne au sein du groupe
+        rulerGroup.forEachObject(obj => {
+            if (obj.type === 'line') {
+                ruler = obj;
+            }
         });
 
-        // Mettre à jour le canevas
+        if (!ruler) {
+            console.error('Le groupe de règle ne contient pas une ligne valide.');
+            return;
+        }
+
+        // Calculer les positions absolues des points d'extrémité
+        const groupTransform = rulerGroup.calcTransformMatrix();
+        const startPoint = fabric.util.transformPoint({ x: ruler.x1, y: ruler.y1 }, groupTransform);
+        const endPoint = fabric.util.transformPoint({ x: ruler.x2, y: ruler.y2 }, groupTransform);
+
+        // Calculer la distance en pixels
+        const dx = endPoint.x - startPoint.x;
+        const dy = endPoint.y - startPoint.y;
+        const distance = Math.sqrt(dx * dx + dy * dy);
+
+        // Convertir les pixels en centimètres
+        const lengthInCm = (distance / this.pixelsPerCm).toFixed(2);
+
+        let measurement = '';
+        if (lengthInCm >= 100) {
+            const lengthInMeters = (lengthInCm / 100).toFixed(2);
+            measurement = `${lengthInMeters} m`;
+        } else {
+            measurement = `${lengthInCm} cm`;
+        }
+
+        // Calculer le centre de la règle
+        const centerX = (startPoint.x + endPoint.x) / 2;
+        const centerY = (startPoint.y + endPoint.y) / 2;
+
+        // Calculer l'angle de la règle en radians
+        const angleRad = Math.atan2(dy, dx);
+
+        // Calculer un décalage perpendiculaire pour positionner le texte juste au-dessus
+        const offset = 20; // Distance en pixels au-dessus de la règle
+        const offsetX = -Math.sin(angleRad) * offset;
+        const offsetY = Math.cos(angleRad) * offset;
+
+        // Mettre à jour le texte de la règle avec la nouvelle position
+        rulerText.set({
+            text: measurement,
+            left: centerX + offsetX,
+            top: centerY + offsetY,
+            angle: 0 // Garder le texte horizontal
+        });
+
+        // Amener le texte au premier plan et rafraîchir le canevas
         this.canvas.bringToFront(rulerText);
         this.canvas.renderAll();
+
+        // Journalisation pour débogage
+        console.log('Transformation du Groupe de Règle:', {
+            p1: startPoint,
+            p2: endPoint,
+            distance: distance,
+            lengthInCm: lengthInCm
+        });
     }
 
     addShapeMeasurements(shape) {
@@ -431,7 +405,10 @@ class ShapesModule {
             fill: 'black',
             selectable: false,
             originX: 'center',
-            originY: 'center'
+            originY: 'center',
+            backgroundColor: 'rgba(255, 255, 255, 0.7)', // Fond blanc semi-transparent
+            stroke: 'black',
+            strokeWidth: 0.5
         });
         this.canvas.add(measurementText);
         this.history.enregistrerEtat();
@@ -466,21 +443,22 @@ class ShapesModule {
         if (shape.type === 'rect') {
             const width = (shape.getScaledWidth() / this.pixelsPerCm).toFixed(2);
             const height = (shape.getScaledHeight() / this.pixelsPerCm).toFixed(2);
-            measurements = `L: ${width} dm, H: ${height} dm`;
+            measurements = `L: ${width} cm, H: ${height} cm`;
         } else if (shape.type === 'circle') {
             const radius = (shape.radius * shape.scaleX / this.pixelsPerCm).toFixed(2);
             const diameter = (2 * shape.radius * shape.scaleX / this.pixelsPerCm).toFixed(2);
-            measurements = `R: ${radius} dm, D: ${diameter} dm`;
+            measurements = `R: ${radius} cm, D: ${diameter} cm`;
         } else if (shape.type === 'triangle') {
             const a = (shape.width * shape.scaleX / this.pixelsPerCm).toFixed(2);
             const b = (shape.height * shape.scaleY / this.pixelsPerCm).toFixed(2);
             const c = (Math.sqrt(Math.pow(shape.width, 2) + Math.pow(shape.height, 2)) * shape.scaleX / this.pixelsPerCm).toFixed(2);
-            measurements = `Côtés: A: ${a} dm, B: ${b} dm, C: ${c} dm`;
+            measurements = `Côtés: A: ${a} cm, B: ${b} cm, C: ${c} cm`;
         }
         measurementText.set({
             text: measurements,
             left: shape.left,
-            top: shape.top - 20
+            top: shape.top - 20,
+            angle: 0 // Garder le texte horizontal
         });
         this.canvas.bringToFront(measurementText);
         this.canvas.renderAll();
@@ -796,6 +774,15 @@ class CalculatorModule {
         if (this.calculatorCanvas) {
             this.calculatorCanvas.style.display = 'block';
             this.calculatorCanvas.style.zIndex = 9999;
+            // Positionner la calculatrice au centre si elle n'a pas encore été positionnée
+            if (!this.calculatorCanvas.style.left || !this.calculatorCanvas.style.top) {
+                const windowWidth = window.innerWidth;
+                const windowHeight = window.innerHeight;
+                const calcWidth = this.calculatorCanvas.offsetWidth;
+                const calcHeight = this.calculatorCanvas.offsetHeight;
+                this.calculatorCanvas.style.left = `${(windowWidth - calcWidth) / 2}px`;
+                this.calculatorCanvas.style.top = `${(windowHeight - calcHeight) / 2}px`;
+            }
         } else {
             console.warn("La calculatrice avec l'ID 'calculator-canvas' est introuvable.");
         }
@@ -988,13 +975,15 @@ class PrintPreviewModule {
     constructor(canvas) {
         this.canvas = canvas;
         this.printPreviewBtn = document.getElementById('print-preview-btn');
-        this.printPreviewModal = document.getElementById('print-preview-modal');
 
         // Vérifiez si les éléments existent
-        if (this.printPreviewModal) {
-            this.closeModalSpan = this.printPreviewModal.querySelector('.close-modal');
-            this.previewImage = document.getElementById('preview-image');
-            this.printBtn = document.getElementById('print-btn');
+        if (this.printPreviewBtn) {
+            this.printPreviewModal = document.getElementById('print-preview-modal');
+            if (this.printPreviewModal) {
+                this.closeModalSpan = this.printPreviewModal.querySelector('.close-modal');
+                this.previewImage = document.getElementById('preview-image');
+                this.printBtn = document.getElementById('print-btn');
+            }
         }
     }
 
@@ -1080,7 +1069,7 @@ class DuplicateModule {
         document.body.appendChild(btn);
         btn.style.display = 'none';
         btn.style.position = 'absolute';
-        btn.style.transform = 'translate(-50%, -50%)';
+        btn.style.transform = 'translate(-50%, -100%)';
         btn.style.padding = '5px 10px';
         btn.style.borderRadius = '50%';
         btn.style.backgroundColor = '#4A98F7';
@@ -1088,6 +1077,13 @@ class DuplicateModule {
         btn.style.border = 'none';
         btn.style.cursor = 'pointer';
         btn.style.zIndex = 1000;
+        btn.style.transition = 'background-color 0.3s';
+        btn.addEventListener('mouseover', () => {
+            btn.style.backgroundColor = '#3672c7';
+        });
+        btn.addEventListener('mouseout', () => {
+            btn.style.backgroundColor = '#4A98F7';
+        });
         return btn;
     }
 
@@ -1110,11 +1106,11 @@ class DuplicateModule {
         if (activeObject) {
             // Obtenir la position absolue de l'objet sur le canevas
             const canvasRect = this.canvas.upperCanvasEl.getBoundingClientRect();
-            const objLeft = activeObject.left * this.canvas.getZoom() + canvasRect.left;
+            const objLeft = (activeObject.left + activeObject.width / 2) * this.canvas.getZoom() + canvasRect.left;
             const objTop = activeObject.top * this.canvas.getZoom() + canvasRect.top;
 
             // Positionner le bouton de duplication au centre supérieur de l'objet
-            this.duplicateBtn.style.left = `${objLeft + activeObject.getScaledWidth() / 2}px`;
+            this.duplicateBtn.style.left = `${objLeft}px`;
             this.duplicateBtn.style.top = `${objTop}px`;
             this.duplicateBtn.style.display = 'block';
         }
@@ -1141,7 +1137,8 @@ class DuplicateModule {
                         clonedObj.measurementText.clone((clonedText) => {
                             clonedText.set({
                                 left: clonedObj.left,
-                                top: clonedObj.top - 20
+                                top: clonedObj.top - 20,
+                                angle: 0
                             });
                             this.canvas.add(clonedText);
                             clonedObj.measurementText = clonedText;
@@ -1153,8 +1150,9 @@ class DuplicateModule {
                         if (obj.rulerText) {
                             obj.rulerText.clone((clonedRulerText) => {
                                 clonedRulerText.set({
-                                    left: clonedObj.left + obj.left + obj.getScaledWidth() / 2,
-                                    top: clonedObj.top + obj.top - 20
+                                    left: clonedObj.left + obj.left,
+                                    top: clonedObj.top + obj.top - 20,
+                                    angle: 0
                                 });
                                 this.canvas.add(clonedRulerText);
                                 obj.rulerText = clonedRulerText;
@@ -1164,7 +1162,8 @@ class DuplicateModule {
                             obj.measurementText.clone((clonedText) => {
                                 clonedText.set({
                                     left: clonedObj.left + obj.left,
-                                    top: clonedObj.top + obj.top - 20
+                                    top: clonedObj.top + obj.top - 20,
+                                    angle: 0
                                 });
                                 this.canvas.add(clonedText);
                                 obj.measurementText = clonedText;
@@ -1309,3 +1308,69 @@ class PhotoPaletteModule {
         }
     }
 }
+
+// Classe Principale de l'Application
+class App {
+    constructor(canvas) {
+        this.canvas = canvas;
+        this.historyModule = new HistoryModule(canvas);
+        this.colorModule = new ColorModule();
+        this.brushModule = new BrushModule(canvas, this.colorModule);
+        this.shapesModule = new ShapesModule(canvas, this.colorModule, this.historyModule);
+        this.textModule = new TextModule(canvas, this.historyModule);
+        this.calculatorModule = new CalculatorModule();
+        this.importExportModule = new ImportExportModule(canvas, this.historyModule);
+        this.printPreviewModule = new PrintPreviewModule(canvas);
+        this.duplicateModule = new DuplicateModule(canvas, this.historyModule);
+        this.photoPaletteModule = new PhotoPaletteModule(canvas, this.historyModule);
+    }
+
+    init() {
+        // Initialiser tous les modules
+        this.historyModule.enregistrerEtat(); // Enregistrer l'état initial
+        this.colorModule.init();
+        this.brushModule.init();
+        this.shapesModule.init();
+        this.textModule.init();
+        this.calculatorModule.init();
+        this.importExportModule.init();
+        this.printPreviewModule.init();
+        this.duplicateModule.init();
+        this.photoPaletteModule.init();
+
+        // Attacher les événements pour l'annulation et le rétablissement
+        const undoBtn = document.getElementById('annuler-btn');
+        const redoBtn = document.getElementById('rétablir-btn');
+
+        if (undoBtn) {
+            undoBtn.addEventListener('click', () => this.historyModule.annuler());
+        } else {
+            console.warn("Le bouton 'Annuler' avec l'ID 'annuler-btn' est introuvable.");
+        }
+
+        if (redoBtn) {
+            redoBtn.addEventListener('click', () => this.historyModule.retablir());
+        } else {
+            console.warn("Le bouton 'Rétablir' avec l'ID 'rétablir-btn' est introuvable.");
+        }
+
+        // Gérer les événements de modification du canevas pour l'historique
+        this.canvas.on('object:added', () => this.historyModule.enregistrerEtat());
+        this.canvas.on('object:modified', () => this.historyModule.enregistrerEtat());
+        this.canvas.on('object:removed', () => this.historyModule.enregistrerEtat());
+    }
+}
+
+// Initialisation de l'Application une fois le DOM chargé
+document.addEventListener('DOMContentLoaded', () => {
+    const canvas = new fabric.Canvas('canvas', {
+        isDrawingMode: false,
+        backgroundColor: 'white',
+        width: 1130,
+        height: 1440
+    });
+
+    // Initialiser l'application
+    const app = new App(canvas);
+    app.init();
+});
