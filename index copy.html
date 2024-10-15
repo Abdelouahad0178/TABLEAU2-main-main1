@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <title>Application de Dessin avec Fabric.js</title>
+    <link rel="stylesheet" href="style.css">
+    <!-- Inclure Fabric.js -->
+    
+<body>
+    <!-- Barre d'outils -->
+    <div class="toolbar">
+        <button id="brush" title="Pinceau">🖌️</button>
+        <button id="eraser" title="Gomme">🩹</button>
+        <input type="range" id="size-slider" min="1" max="50" value="5" title="Taille">
+        
+        <div class="colors">
+            <div class="option" style="background-color: #000000;" title="Noir"></div>
+            <div class="option" style="background-color: #FF0000;" title="Rouge"></div>
+            <div class="option" style="background-color: #00FF00;" title="Vert"></div>
+            <div class="option" style="background-color: #0000FF;" title="Bleu"></div>
+            <input type="color" id="color-picker" title="Couleur personnalisée">
+        </div>
+        
+        <button id="rectangle" title="Ajouter Rectangle">🔲</button>
+        <button id="circle" title="Ajouter Cercle">⚪</button>
+        <button id="triangle" title="Ajouter Triangle">🔺</button>
+        <button id="add-table-btn" title="Ajouter Tableau">🧮</button>
+        <button id="add-text-btn" title="Ajouter Texte">📝</button>
+        <button id="add-ruler" title="Ajouter Règle">📏</button>
+        
+        <div class="shape-color-picker">
+            <label for="shape-color-picker">Couleur Forme:</label>
+            <input type="color" id="shape-color-picker" value="#000000">
+        </div>
+        
+        <button id="annuler-btn" title="Annuler">↩️</button>
+        <button id="rétablir-btn" title="Rétablir">↪️</button>
+        
+        <button id="print-preview-btn" title="Aperçu Avant Impression">🖨️</button>
+        <button id="show-calculator" title="Calculatrice">🧮</button>
+        
+        <button class="save-img" title="Enregistrer en Image">💾</button>
+        <input type="file" id="upload-image" accept="image/*" title="Télécharger Image">
+        <button id="save-json" title="Enregistrer en JSON">📁</button>
+        <input type="file" id="load-json" accept=".json" title="Charger JSON">
+        
+        <button id="delete-object" title="Supprimer Objet">❌</button>
+        <button id="delete-measurement-text" title="Supprimer Texte de Mesure">🗑️</button>
+        
+        <button id="open-photo-palette-btn" title="Palette de Photos">🖼️</button>
+    </div>
+    
+    <!-- Menu des Propriétés de Texte -->
+    <div id="text-properties-menu" class="text-properties-menu">
+        <label for="font-family">Police:</label>
+        <select id="font-family">
+            <option value="Arial">Arial</option>
+            <option value="Helvetica">Helvetica</option>
+            <option value="Times New Roman">Times New Roman</option>
+            <option value="Courier New">Courier New</option>
+            <option value="Verdana">Verdana</option>
+        </select>
+        
+        <label for="font-size">Taille:</label>
+        <input type="number" id="font-size" min="10" max="100" value="20">
+        
+        <label for="font-weight">Gras:</label>
+        <select id="font-weight">
+            <option value="normal">Normal</option>
+            <option value="bold">Gras</option>
+            <option value="bolder">Plus Gras</option>
+            <option value="lighter">Plus Léger</option>
+        </select>
+        
+        <label for="text-color">Couleur:</label>
+        <input type="color" id="text-color" value="#000000">
+    </div>
+    
+    <!-- Canvas -->
+    <canvas id="canvas"></canvas>
+    
+    <!-- Calculatrice Modal -->
+    <div id="calculator-canvas" class="modal">
+        <div class="modal-content">
+            <h3>Calculatrice</h3>
+            <input type="text" id="canvas-calc-display" readonly>
+            <div class="calculator-buttons">
+                <button class="calc-btn">7</button>
+                <button class="calc-btn">8</button>
+                <button class="calc-btn">9</button>
+                <button class="calc-btn">/</button>
+                
+                <button class="calc-btn">4</button>
+                <button class="calc-btn">5</button>
+                <button class="calc-btn">6</button>
+                <button class="calc-btn">*</button>
+                
+                <button class="calc-btn">1</button>
+                <button class="calc-btn">2</button>
+                <button class="calc-btn">3</button>
+                <button class="calc-btn">-</button>
+                
+                <button class="calc-btn">0</button>
+                <button class="calc-btn">.</button>
+                <button class="calc-btn">C</button>
+                <button class="calc-btn">+</button>
+                
+                <button class="calc-btn" style="width: 100%;">=</button>
+            </div>
+            <button id="close-canvas-calculator" class="close-modal">×</button>
+        </div>
+    </div>
+    
+    <!-- Aperçu Avant Impression Modal -->
+    <div id="print-preview-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Aperçu Avant Impression</h3>
+            <img id="preview-image" src="" alt="Aperçu du Canevas">
+            <button id="print-btn">Imprimer</button>
+        </div>
+    </div>
+    
+    <!-- Palette de Photos Modal -->
+    <div id="photo-palette-modal" class="modal">
+        <div class="modal-content">
+            <span class="close-modal">&times;</span>
+            <h3>Palette de Photos</h3>
+            <input type="text" id="photo-search" placeholder="Rechercher des photos...">
+            <div id="photo-gallery" class="photo-gallery">
+                <!-- Les photos seront chargées ici dynamiquement -->
+            </div>
+        </div>
+    </div>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/fabric.js/4.6.0/fabric.min.js"></script>
+</head>
+    <!-- Inclure le script JavaScript -->
+    <script src="script.js"></script>
+</body>
+</html>
