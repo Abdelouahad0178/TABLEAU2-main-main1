@@ -254,7 +254,7 @@ class ShapesModule {
             this.canvas.add(this.tempShape);
         } else if (this.drawingMode === 'rectangle-fixed-height') {
             const color = this.colorModule.getShapeColor();
-            const fixedHeight = 3.4 * this.pixelsPerCm; // 3.4 cm converti en pixels
+            const fixedHeight = 0.3 * this.pixelsPerCm; // 3.4 cm converti en pixels
             this.tempShape = new fabric.Rect({
                 left: this.startX,
                 top: this.startY,
