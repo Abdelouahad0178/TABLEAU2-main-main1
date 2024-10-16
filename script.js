@@ -1,5 +1,3 @@
-// script.js
-
 // Module de Gestion de l'Historique
 class HistoryModule {
     constructor(canvas) {
@@ -17,7 +15,7 @@ class HistoryModule {
         // Supprimer les états futurs si on enregistre un nouvel état
         this.history = this.history.slice(0, this.currentIndex + 1);
         // Enregistrer l'état actuel du canevas
-        this.history.push(JSON.stringify(this.canvas));
+        this.history.push(this.canvas.toJSON());
         this.currentIndex++;
     }
 
@@ -171,11 +169,10 @@ class BrushModule {
 
 // Module de Gestion des Formes et Mesures
 class ShapesModule {
-    constructor(canvas, colorModule, historyModule, rulerModule) {
+    constructor(canvas, colorModule, historyModule) {
         this.canvas = canvas;
         this.colorModule = colorModule;
         this.history = historyModule;
-        this.rulerModule = rulerModule;
         this.pixelsPerCm = 37.7952755906; // Conversion pixels en cm (approximation)
         this.currentlyDrawing = false;
         this.tempShape = null;
@@ -257,14 +254,15 @@ class ShapesModule {
             this.canvas.add(this.tempShape);
         } else if (this.drawingMode === 'rectangle-fixed-height') {
             const color = this.colorModule.getShapeColor();
+            const fixedHeight = 3.4 * this.pixelsPerCm; // 3.4 cm converti en pixels
             this.tempShape = new fabric.Rect({
                 left: this.startX,
                 top: this.startY,
-                fill: color,
+                fill: 'transparent',
                 stroke: color,
                 strokeWidth: 2,
-                width: 50,
-                height: 3.4, // Hauteur fixe
+                width: 0,
+                height: fixedHeight,
                 hasControls: true,
                 hasBorders: true,
                 selectable: true,
@@ -279,7 +277,7 @@ class ShapesModule {
 
         const pointer = this.canvas.getPointer(opt.e);
         const width = pointer.x - this.startX;
-        const height = pointer.y - this.startY;
+        let height = pointer.y - this.startY;
 
         if (this.drawingMode === 'rectangle') {
             this.tempShape.set({ width: width, height: height });
@@ -288,7 +286,7 @@ class ShapesModule {
         } else if (this.drawingMode === 'rectangle-fixed-height') {
             this.tempShape.set({ width: width });
             this.canvas.renderAll();
-            this.updateFixedRectangleMeasurement(this.tempShape);
+            this.updateShapeMeasurements(this.tempShape);
         }
     }
 
@@ -299,7 +297,7 @@ class ShapesModule {
 
         if (this.tempShape) {
             if (this.tempShape.fixedHeightRectangle) {
-                // Ajouter la mesure de la longueur uniquement
+                // Ajouter uniquement la mesure de la longueur (width)
                 this.addFixedRectangleMeasurement(this.tempShape);
             } else {
                 this.addShapeMeasurements(this.tempShape);
@@ -407,6 +405,11 @@ class ShapesModule {
     }
 
     updateShapeMeasurements(shape, measurementText) {
+        if (!measurementText) {
+            console.warn("measurementText est undefined.");
+            return;
+        }
+
         let measurements = '';
         if (shape.type === 'rect') {
             const width = (shape.getScaledWidth() / this.pixelsPerCm).toFixed(2);
@@ -424,7 +427,7 @@ class ShapesModule {
         }
         measurementText.set({
             text: measurements,
-            left: shape.left,
+            left: shape.left + shape.getScaledWidth() / 2,
             top: shape.top - 20,
             angle: 0 // Garder le texte horizontal
         });
@@ -433,9 +436,7 @@ class ShapesModule {
     }
 
     addFixedRectangleMeasurement(shape) {
-        // Ajouter uniquement la mesure de la longueur (width)
-        const width = (shape.getScaledWidth() / this.pixelsPerCm).toFixed(2);
-        const measurementText = new fabric.Text(`L: ${width} cm`, {
+        const measurementText = new fabric.Text('', {
             fontSize: 14,
             fill: 'black',
             selectable: false,
@@ -448,9 +449,9 @@ class ShapesModule {
         this.canvas.add(measurementText);
         this.history.enregistrerEtat();
 
-        shape.lengthMeasurementText = measurementText;
-
         this.updateFixedRectangleMeasurement(shape, measurementText);
+
+        shape.lengthMeasurementText = measurementText;
 
         shape.on('modified', () => {
             this.updateFixedRectangleMeasurement(shape, measurementText);
@@ -468,6 +469,11 @@ class ShapesModule {
     }
 
     updateFixedRectangleMeasurement(shape, measurementText) {
+        if (!measurementText) {
+            console.warn("measurementText est undefined pour le rectangle fixe.");
+            return;
+        }
+
         const width = (shape.getScaledWidth() / this.pixelsPerCm).toFixed(2);
         measurementText.set({
             text: `L: ${width} cm`,
@@ -551,134 +557,6 @@ class ShapesModule {
         this.canvas.setActiveObject(tableGroup);
         this.canvas.renderAll();
         this.history.enregistrerEtat();
-    }
-}
-
-// Module de Gestion de la Règle de Mesure Dynamique
-class RulerModule {
-    constructor(canvas, colorModule, historyModule) {
-        this.canvas = canvas;
-        this.colorModule = colorModule;
-        this.history = historyModule;
-        this.pixelsPerCm = 37.7952755906; // Conversion pixels en cm (approximation)
-    }
-
-    init() {
-        this.setupAddRulerButton();
-    }
-
-    setupAddRulerButton() {
-        const addRulerBtn = document.getElementById('add-ruler');
-        if (addRulerBtn) {
-            addRulerBtn.addEventListener('click', () => this.addRuler());
-        } else {
-            console.warn("Le bouton 'Ajouter une Règle' avec l'ID 'add-ruler' est introuvable.");
-        }
-    }
-
-    addRuler() {
-        const rulerColor = this.colorModule.getShapeColor(); // Utiliser la couleur sélectionnée pour la règle
-
-        // Créer la ligne de la règle
-        const rulerLine = new fabric.Line([0, 0, 300, 0], { // Ligne de 300 pixels de long
-            stroke: rulerColor,
-            strokeWidth: 3,
-            selectable: true,
-            hasBorders: true,
-            hasControls: true,
-            originX: 'center',
-            originY: 'center',
-            lockRotation: true, // Verrouiller la rotation pour une meilleure stabilité
-            lockScalingFlip: true // Éviter les retournements involontaires
-        });
-
-        // Créer le texte de mesure
-        const rulerText = new fabric.Text('0 cm', {
-            fontSize: 14,
-            fill: 'black',
-            selectable: false, // Empêcher la sélection du texte
-            evented: false, // Empêcher les interactions avec le texte
-            originX: 'center',
-            originY: 'center',
-            backgroundColor: 'rgba(255, 255, 255, 0.7)', // Fond blanc semi-transparent
-            stroke: 'black',
-            strokeWidth: 0.5,
-            lockRotation: true, // Verrouiller la rotation du texte
-            lockScalingX: true, // Verrouiller le redimensionnement en X
-            lockScalingY: true, // Verrouiller le redimensionnement en Y
-            lockMovementX: true, // Verrouiller le mouvement en X
-            lockMovementY: true  // Verrouiller le mouvement en Y
-        });
-
-        // Créer un groupe contenant la ligne et le texte
-        const rulerGroup = new fabric.Group([rulerLine, rulerText], {
-            left: 150,
-            top: 150,
-            selectable: true,
-            hasBorders: true,
-            hasControls: true,
-            lockScalingFlip: true // Éviter les retournements involontaires
-        });
-
-        this.canvas.add(rulerGroup);
-        this.canvas.setActiveObject(rulerGroup);
-        this.canvas.renderAll();
-        this.history.enregistrerEtat();
-
-        // Initialiser la mise à jour de la mesure
-        this.updateRulerMeasurement(rulerGroup, rulerLine, rulerText);
-
-        // Attacher les événements pour mettre à jour la mesure dynamiquement
-        rulerGroup.on('scaling', () => this.updateRulerMeasurement(rulerGroup, rulerLine, rulerText));
-        rulerGroup.on('moving', () => this.updateRulerMeasurement(rulerGroup, rulerLine, rulerText));
-        rulerGroup.on('rotating', () => this.updateRulerMeasurement(rulerGroup, rulerLine, rulerText));
-        rulerGroup.on('modified', () => this.updateRulerMeasurement(rulerGroup, rulerLine, rulerText));
-
-        // Associer le texte de mesure au groupe pour une gestion facile
-        rulerGroup.rulerText = rulerText;
-    }
-
-    updateRulerMeasurement(rulerGroup, rulerLine, rulerText) {
-        // Calculer la longueur de la ligne en pixels
-        const dx = rulerLine.x2 - rulerLine.x1;
-        const dy = rulerLine.y2 - rulerLine.y1;
-        const distance = Math.sqrt(dx * dx + dy * dy);
-
-        // Convertir les pixels en centimètres
-        const lengthInCm = (distance / this.pixelsPerCm).toFixed(2);
-
-        // Déterminer le format de la mesure
-        let measurement = '';
-        if (lengthInCm >= 100) {
-            const lengthInMeters = (lengthInCm / 100).toFixed(2);
-            measurement = `${lengthInMeters} m`;
-        } else {
-            measurement = `${lengthInCm} cm`;
-        }
-
-        // Calculer le centre de la ligne
-        const centerX = (rulerLine.x1 + rulerLine.x2) / 2;
-        const centerY = (rulerLine.y1 + rulerLine.y2) / 2;
-
-        // Calculer l'angle de la ligne en radians
-        const angleRad = Math.atan2(dy, dx);
-
-        // Calculer un décalage perpendiculaire pour positionner le texte juste au-dessus
-        const offset = 20; // Distance en pixels au-dessus de la règle
-        const offsetX = -Math.sin(angleRad) * offset;
-        const offsetY = Math.cos(angleRad) * offset;
-
-        // Mettre à jour le texte de mesure
-        rulerText.set({
-            text: measurement,
-            left: centerX + offsetX,
-            top: centerY + offsetY,
-            angle: 0 // Garder le texte horizontal
-        });
-
-        // Amener le texte au premier plan et rafraîchir le canevas
-        this.canvas.bringToFront(rulerText);
-        this.canvas.renderAll();
     }
 }
 
@@ -1072,7 +950,7 @@ class ImportExportModule {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject) {
             // Supprimer le texte de mesure associé si présent
-            const associatedText = activeObject.measurementText || activeObject.lengthMeasurementText || activeObject.rulerText;
+            const associatedText = activeObject.measurementText || activeObject.lengthMeasurementText;
             if (associatedText) {
                 this.canvas.remove(associatedText);
             }
@@ -1096,7 +974,7 @@ class ImportExportModule {
     deleteMeasurementText() {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject) {
-            const associatedText = activeObject.measurementText || activeObject.lengthMeasurementText || activeObject.rulerText;
+            const associatedText = activeObject.measurementText || activeObject.lengthMeasurementText;
             if (associatedText) {
                 this.canvas.remove(associatedText);
                 if (activeObject.measurementText) {
@@ -1106,9 +984,6 @@ class ImportExportModule {
                 if (activeObject.lengthMeasurementText) {
                     activeObject.lengthMeasurementTextActive = false;
                     delete activeObject.lengthMeasurementText;
-                }
-                if (activeObject.rulerText) {
-                    delete activeObject.rulerText;
                 }
                 this.canvas.renderAll();
                 this.history.enregistrerEtat();
@@ -1296,19 +1171,6 @@ class DuplicateModule {
                     });
                 }
 
-                // Si l'objet cloné est une règle, cloner également son texte de mesure
-                if (clonedObj.type === 'group' && clonedObj.rulerText) {
-                    clonedObj.rulerText.clone((clonedText) => {
-                        clonedText.set({
-                            left: clonedObj.left + clonedObj.getScaledWidth() / 2,
-                            top: clonedObj.top - 20,
-                            angle: 0
-                        });
-                        this.canvas.add(clonedText);
-                        clonedObj.rulerText = clonedText;
-                    });
-                }
-
                 this.canvas.renderAll();
                 this.history.enregistrerEtat();
             });
@@ -1319,7 +1181,7 @@ class DuplicateModule {
     deleteSelectedObject() {
         const activeObject = this.canvas.getActiveObject();
         if (activeObject) {
-            const associatedText = activeObject.measurementText || activeObject.lengthMeasurementText || activeObject.rulerText;
+            const associatedText = activeObject.measurementText || activeObject.lengthMeasurementText;
             if (associatedText) {
                 this.canvas.remove(associatedText);
             }
@@ -1459,16 +1321,17 @@ class UndoRedoModule {
     }
 }
 
-// Module de Gestion de la Largeur du Canevas
+// Module de Gestion de la Largeur et de la Hauteur du Canevas
 class CanvasResizeModule {
     constructor(canvas) {
         this.canvas = canvas;
-        this.resizeInput = document.getElementById('resize-width-input'); // Assurez-vous d'avoir cet élément dans votre HTML
+        this.resizeWidthInput = document.getElementById('resize-width-input'); // Assurez-vous d'avoir cet élément dans votre HTML
+        this.resizeHeightInput = document.getElementById('resize-height-input'); // Ajout de l'input pour la hauteur
         this.resizeBtn = document.getElementById('resize-width-btn'); // Assurez-vous d'avoir cet élément dans votre HTML
     }
 
     init() {
-        if (this.resizeInput && this.resizeBtn) {
+        if (this.resizeWidthInput && this.resizeHeightInput && this.resizeBtn) {
             this.resizeBtn.addEventListener('click', () => this.resizeCanvas());
         } else {
             console.warn("Les éléments de redimensionnement du canevas sont introuvables.");
@@ -1476,13 +1339,15 @@ class CanvasResizeModule {
     }
 
     resizeCanvas() {
-        const newWidth = parseInt(this.resizeInput.value, 10);
-        if (!isNaN(newWidth) && newWidth > 0) {
+        const newWidth = parseInt(this.resizeWidthInput.value, 10);
+        const newHeight = parseInt(this.resizeHeightInput.value, 10);
+        if (!isNaN(newWidth) && newWidth > 0 && !isNaN(newHeight) && newHeight > 0) {
             this.canvas.setWidth(newWidth);
+            this.canvas.setHeight(newHeight);
             this.canvas.renderAll();
-            alert(`Largeur du canevas modifiée à ${newWidth}px`);
+            alert(`Dimensions du canevas modifiées à ${newWidth}px x ${newHeight}px`);
         } else {
-            alert("Veuillez entrer une valeur valide pour la largeur.");
+            alert("Veuillez entrer des valeurs valides pour la largeur et la hauteur.");
         }
     }
 }
@@ -1494,8 +1359,7 @@ class App {
         this.historyModule = new HistoryModule(canvas);
         this.colorModule = new ColorModule();
         this.brushModule = new BrushModule(canvas, this.colorModule);
-        this.rulerModule = new RulerModule(canvas, this.colorModule, this.historyModule);
-        this.shapesModule = new ShapesModule(canvas, this.colorModule, this.historyModule, this.rulerModule);
+        this.shapesModule = new ShapesModule(canvas, this.colorModule, this.historyModule);
         this.textModule = new TextModule(canvas, this.historyModule);
         this.calculatorModule = new CalculatorModule();
         this.importExportModule = new ImportExportModule(canvas, this.historyModule);
@@ -1510,7 +1374,6 @@ class App {
         // Initialiser tous les modules
         this.colorModule.init();
         this.brushModule.init();
-        this.rulerModule.init();
         this.shapesModule.init();
         this.textModule.init();
         this.calculatorModule.init();
@@ -1547,8 +1410,15 @@ document.addEventListener('DOMContentLoaded', () => {
     const canvas = new fabric.Canvas('canvas', {
         isDrawingMode: false,
         backgroundColor: 'white',
-        width: window.innerWidth * 0.7, // Ajustez selon vos besoins
-        height: window.innerHeight * 0.8 // Ajustez selon vos besoins
+        width: window.innerWidth, // Prend toute la largeur de la fenêtre
+        height: window.innerHeight // Prend toute la hauteur de la fenêtre
+    });
+
+    // Ajuster le canevas lors du redimensionnement de la fenêtre
+    window.addEventListener('resize', () => {
+        canvas.setWidth(window.innerWidth);
+        canvas.setHeight(window.innerHeight);
+        canvas.renderAll();
     });
 
     // Initialiser l'application
