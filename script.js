@@ -315,14 +315,6 @@ class ShapesModule {
         return 'filled'; // Valeur par défaut
     }
 
-    addRectangle() {
-        // Cette méthode est désormais gérée par le mode de dessin
-    }
-
-    addRectangleFixedHeight() {
-        // Cette méthode est désormais gérée par le mode de dessin
-    }
-
     addCircle() {
         const color = this.colorModule.getShapeColor();
         const fillOption = this.getFillOption();
@@ -483,10 +475,6 @@ class ShapesModule {
         });
         this.canvas.bringToFront(measurementText);
         this.canvas.renderAll();
-    }
-
-    addShapeMeasurementsDynamic(shape, measurementText) {
-        // Pour gérer les mises à jour dynamiques, vous pouvez étendre cette méthode si nécessaire
     }
 
     setupAddTable() {
@@ -1104,12 +1092,24 @@ class DuplicateModule {
         btn.style.cursor = 'pointer';
         btn.style.zIndex = 1000;
         btn.style.transition = 'background-color 0.3s';
+        btn.style.width = '30px';
+        btn.style.height = '30px';
+        btn.style.display = 'flex';
+        btn.style.alignItems = 'center';
+        btn.style.justifyContent = 'center';
+        btn.style.fontSize = '16px';
+        btn.style.boxShadow = '0 2px 5px rgba(0, 0, 0, 0.3)';
+        btn.style.borderRadius = '50%';
+        btn.style.backgroundColor = '#4A98F7';
+        btn.style.color = '#fff';
+
         btn.addEventListener('mouseover', () => {
             btn.style.backgroundColor = '#3672c7';
         });
         btn.addEventListener('mouseout', () => {
             btn.style.backgroundColor = '#4A98F7';
         });
+
         return btn;
     }
 
@@ -1321,17 +1321,17 @@ class UndoRedoModule {
     }
 }
 
-// Module de Gestion de la Largeur et de la Hauteur du Canevas
+// Module de Gestion de la Largeur du Canevas
 class CanvasResizeModule {
     constructor(canvas) {
         this.canvas = canvas;
         this.resizeWidthInput = document.getElementById('resize-width-input'); // Assurez-vous d'avoir cet élément dans votre HTML
-        this.resizeHeightInput = document.getElementById('resize-height-input'); // Ajout de l'input pour la hauteur
+        // this.resizeHeightInput = document.getElementById('resize-height-input'); // Ignorer la hauteur
         this.resizeBtn = document.getElementById('resize-width-btn'); // Assurez-vous d'avoir cet élément dans votre HTML
     }
 
     init() {
-        if (this.resizeWidthInput && this.resizeHeightInput && this.resizeBtn) {
+        if (this.resizeWidthInput && this.resizeBtn) {
             this.resizeBtn.addEventListener('click', () => this.resizeCanvas());
         } else {
             console.warn("Les éléments de redimensionnement du canevas sont introuvables.");
@@ -1340,14 +1340,14 @@ class CanvasResizeModule {
 
     resizeCanvas() {
         const newWidth = parseInt(this.resizeWidthInput.value, 10);
-        const newHeight = parseInt(this.resizeHeightInput.value, 10);
-        if (!isNaN(newWidth) && newWidth > 0 && !isNaN(newHeight) && newHeight > 0) {
+        // const newHeight = parseInt(this.resizeHeightInput.value, 10); // Ne pas changer la hauteur
+        if (!isNaN(newWidth) && newWidth > 0) {
             this.canvas.setWidth(newWidth);
-            this.canvas.setHeight(newHeight);
+            // this.canvas.setHeight(newHeight); // Ne pas changer la hauteur
             this.canvas.renderAll();
-            alert(`Dimensions du canevas modifiées à ${newWidth}px x ${newHeight}px`);
+            alert(`Largeur du canevas modifiée à ${newWidth}px (Hauteur inchangée)`);
         } else {
-            alert("Veuillez entrer des valeurs valides pour la largeur et la hauteur.");
+            alert("Veuillez entrer une valeur valide pour la largeur.");
         }
     }
 }
@@ -1407,17 +1407,20 @@ class App {
 
 // Initialisation de l'Application une fois le DOM chargé
 document.addEventListener('DOMContentLoaded', () => {
+    const drawingBoard = document.querySelector('.drawing-board');
+    const canvasElement = document.getElementById('canvas');
+
     const canvas = new fabric.Canvas('canvas', {
         isDrawingMode: false,
         backgroundColor: 'white',
-        width: window.innerWidth, // Prend toute la largeur de la fenêtre
-        height: window.innerHeight // Prend toute la hauteur de la fenêtre
+        width: drawingBoard.clientWidth, // Largeur du conteneur
+        height: 2244 // Hauteur équivalente à 20 pages A4
     });
 
-    // Ajuster le canevas lors du redimensionnement de la fenêtre
+    // Ajuster le canevas lors du redimensionnement de la fenêtre (seulement la largeur)
     window.addEventListener('resize', () => {
-        canvas.setWidth(window.innerWidth);
-        canvas.setHeight(window.innerHeight);
+        const newWidth = drawingBoard.clientWidth;
+        canvas.setWidth(newWidth);
         canvas.renderAll();
     });
 
